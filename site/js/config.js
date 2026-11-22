@@ -19,6 +19,9 @@ window.SHOP = {
    colors  : [couleur principale, couleur secondaire, couleur du texte]
    category: "club" | "selection"
    stock   : nombre d'unités disponibles (0 = rupture)
+   photo     : (optionnel) photo de face, ex : "images/p01.jpg"
+   photoBack : (optionnel) photo de dos,  ex : "images/p01-dos.jpg"
+               → sans photo, le maillot est dessiné automatiquement avec les couleurs
    (le prix est le même pour tous : voir "price" plus haut)
    --------------------------------------------------------- */
 window.PRODUCTS = [

@@ -33,6 +33,7 @@ img, svg { display: block; max-width: 100%; }
 a { color: inherit; text-decoration: none; }
 button, input, select { font: inherit; color: inherit; }
 button { cursor: pointer; background: none; border: 0; }
+[hidden] { display: none !important; }
 ::selection { background: var(--accent); color: var(--accent-ink); }
 
 h1, h2, h3 { font-family: var(--display); font-weight: 400; letter-spacing: .01em; line-height: .95; margin: 0; text-transform: uppercase; }
@@ -251,6 +252,15 @@ h3 { font-size: 1.6rem; }
 .flip-face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
 .flip-face.back { transform: rotateY(180deg); }
 .flip-face svg { width: 100%; height: 100%; filter: drop-shadow(0 20px 30px rgba(0, 0, 0, .45)); }
+.jersey-photo { width: 100%; height: 100%; object-fit: contain; display: block; filter: drop-shadow(0 20px 30px rgba(0, 0, 0, .45)); }
+.flip.has-photo { aspect-ratio: 1; }
+.no-flip .flip-inner, .product:hover .no-flip .flip-inner { transform: none !important; }
+.product:hover .no-flip .jersey-photo { transform: scale(1.06); }
+.jersey-photo { transition: transform .8s var(--ease); }
+.jersey-stage .jersey-photo { position: absolute; inset: 0; animation: bob 6s ease-in-out infinite; }
+.jersey-stage .jersey-photo.swap-out { animation: swapOut .5s var(--ease) forwards; }
+.jersey-stage .jersey-photo.swap-in { animation: swapIn .7s var(--ease) forwards, bob 6s ease-in-out .7s infinite; }
+.cart-thumb .jersey-photo { filter: none; border-radius: 8px; }
 
 /* =========================== FLOCAGE =========================== */
 .flocage { background: var(--bg-2); border-block: 1px solid var(--line); overflow: hidden; }

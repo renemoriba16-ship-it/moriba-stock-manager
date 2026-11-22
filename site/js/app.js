@@ -15,6 +15,16 @@
   };
   const byId = (id) => P.find((p) => p.id === id);
 
+  /* Photo réelle si fournie dans config.js (photo / photoBack), sinon maillot dessiné */
+  const img = (src, alt) => `<img class="jersey-photo" src="${escapeXML(src)}" alt="${escapeXML(alt)}" loading="lazy" />`;
+  const hasBack = (p) => !p.photo || !!p.photoBack;
+  function face(p, side = "front", opts = {}) {
+    if (side === "front" && p.photo) return img(p.photo, p.name);
+    if (side === "back" && p.photoBack) return img(p.photoBack, p.name + " (dos)");
+    if (side === "back" && p.photo) return img(p.photo, p.name);
+    return jerseySVG(p, side === "back" ? { side: "back", name: S.backName || S.name, number: 10, ...opts } : opts);
+  }
+
   /* ---------------- Static text from config ---------------- */
   $$("[data-shop-name]").forEach((el) => (el.textContent = S.name));
   $("[data-tagline]").textContent = S.tagline;
@@ -106,14 +116,14 @@
   const heroStage = $("#heroJersey");
   const heroPicks = P.filter((p) => p.stock > 0).slice(0, 6);
   let heroIdx = 0;
-  heroStage.innerHTML = jerseySVG(heroPicks[0], { number: 10 });
+  heroStage.innerHTML = face(heroPicks[0], "front", { number: 10 });
   if (!reduceMotion) {
     setInterval(() => {
       const old = heroStage.firstElementChild;
       old.classList.add("swap-out");
       setTimeout(() => {
         heroIdx = (heroIdx + 1) % heroPicks.length;
-        heroStage.innerHTML = jerseySVG(heroPicks[heroIdx], { number: 10 });
+        heroStage.innerHTML = face(heroPicks[heroIdx], "front", { number: 10 });
         heroStage.firstElementChild.classList.add("swap-in");
       }, 450);
     }, 3500);
@@ -149,9 +159,9 @@
       <article class="product" style="--i:${i}" data-id="${p.id}" tabindex="0" aria-label="${escapeXML(p.name)}">
         ${out ? `<span class="badge out">Rupture</span>` : p.badge ? `<span class="badge">${escapeXML(p.badge)}</span>` : ""}
         <div class="product-media" style="--glow:${p.colors[0]}55">
-          <div class="flip"><div class="flip-inner">
-            <div class="flip-face front">${jerseySVG(p)}</div>
-            <div class="flip-face back">${jerseySVG(p, { side: "back", name: S.backName || S.name, number: 10 })}</div>
+          <div class="flip${hasBack(p) ? "" : " no-flip"}${p.photo ? " has-photo" : ""}"><div class="flip-inner">
+            <div class="flip-face front">${face(p)}</div>
+            <div class="flip-face back">${face(p, "back")}</div>
           </div></div>
           ${out ? "" : `<button class="quick-add" data-quick="${p.id}" aria-label="Ajout rapide ${escapeXML(p.name)}">+</button>`}
         </div>
@@ -178,7 +188,7 @@
     const quick = e.target.closest("[data-quick]");
     if (quick) {
       e.stopPropagation();
-      addToCart({ id: quick.dataset.quick, size: "M", qty: 1 }, quick.closest(".product").querySelector(".flip-face.front svg"));
+      addToCart({ id: quick.dataset.quick, size: "M", qty: 1 }, quick.closest(".product").querySelector(".flip-face.front > *"));
       return;
     }
     const card = e.target.closest(".product");
@@ -220,8 +230,10 @@
   }
   function renderModalJersey() {
     const p = byId(m.id);
-    $("#mFront").innerHTML = jerseySVG(p);
-    $("#mBack").innerHTML = jerseySVG(p, { side: "back", name: S.backName || S.name, number: 10 });
+    $("#mFront").innerHTML = face(p);
+    $("#mBack").innerHTML = face(p, "back");
+    $("#mTurn").hidden = !hasBack(p);
+    $("#mFlip").classList.toggle("has-photo", !!p.photo);
   }
   function closeModal() {
     modal.classList.remove("open");
@@ -249,7 +261,7 @@
       $("#mSizes").animate([{ transform: "translateX(0)" }, { transform: "translateX(-8px)" }, { transform: "translateX(8px)" }, { transform: "translateX(0)" }], { duration: 350 });
       return;
     }
-    addToCart({ id: m.id, size: m.size, qty: m.qty }, $("#mFlip .flip-face.front svg"));
+    addToCart({ id: m.id, size: m.size, qty: m.qty }, $("#mFlip .flip-face.front > *"));
     closeModal();
   });
 
@@ -312,7 +324,7 @@
         const p = byId(it.id);
         return `
         <li class="cart-item" data-i="${i}" style="animation-delay:${i * 50}ms">
-          <div class="cart-thumb">${jerseySVG(p)}</div>
+          <div class="cart-thumb">${face(p)}</div>
           <div>
             <h4>${escapeXML(p.name)}</h4>
             <small>Taille ${it.size} • ${money(unitPrice(it))} l'unité</small>
