@@ -6,7 +6,7 @@
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const finePointer = matchMedia("(pointer: fine)").matches;
-  const SIZES = ["XS", "S", "M", "L", "XL", "XXL"];
+  const SIZES = ["M", "L", "XL", "XXL"];
   const CAT_LABEL = { club: "Club", selection: "Sélection" };
 
   const money = (n) => {
@@ -284,7 +284,7 @@
   const KEY = "moriba-cart";
   let cart = [];
   try { cart = JSON.parse(localStorage.getItem(KEY)) || []; } catch (_) { cart = []; }
-  cart = cart.filter((it) => byId(it.id) && !isOut(byId(it.id))).map(({ id, size, qty }) => ({ id, size, qty }));
+  cart = cart.filter((it) => byId(it.id) && !isOut(byId(it.id)) && SIZES.includes(it.size)).map(({ id, size, qty }) => ({ id, size, qty }));
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(cart)); } catch (_) {} };
   const keyOf = (it) => it.id + "|" + it.size;
   const unitPrice = (it) => byId(it.id).price;
