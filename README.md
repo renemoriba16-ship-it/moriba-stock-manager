@@ -44,10 +44,15 @@ Site vitrine animé pour la vente de maillots, 100 % statique (HTML/CSS/JS, aucu
 - Responsive mobile, respecte « réduire les animations »
 
 **Maillot 3D (Blender + three.js)**
-- Le modèle 3D est généré par le script Blender `blender/maillot.py` et exporté dans `site/models/maillot.glb`.
-  Pour le régénérer : `pip install bpy` puis `python blender/maillot.py` (ou `blender -b -P blender/maillot.py`).
+- `blender/textures.py` détoure les photos des maillots (fond blanc), calcule leur silhouette moyenne
+  (`blender/silhouette.json`) et crée les textures 3D (face + dos) dans `site/models/tex/`.
+- `blender/maillot.py` construit le modèle 3D dans Blender avec cette silhouette et l'exporte dans `site/models/maillot.glb`.
+- Pour tout régénérer : `pip install bpy numpy opencv-python-headless pillow`, puis
+  `python blender/textures.py` et `python blender/maillot.py`.
+- Ajouter un maillot à la 3D : photo sur fond blanc dans `site/images/`, une ligne dans `JERSEYS` (textures.py),
+  relancer les deux scripts, et ajouter `tex3d: "models/tex/<id>.webp"` au produit dans `config.js`.
 - Le site l'affiche en direct avec three.js (`site/js/jersey3d.js`, bibliothèque copiée dans `site/vendor/three/`) :
-  il se balance, suit la souris, se fait tourner au doigt, change de coloris et montre le dos quand on défile.
+  il flotte, suit la souris, se fait tourner au doigt, passe d'un maillot du catalogue à l'autre (avec un bouton pour ouvrir sa fiche) et montre le dos quand on défile.
 - La 3D ne fonctionne qu'en ligne (ou via un petit serveur local, ex. `python3 -m http.server` dans `site/`) ;
   en ouvrant `index.html` directement, le carrousel photo s'affiche à la place.
 

@@ -37,6 +37,14 @@ half = [
 ]
 outline = half + [(-x, y) for (x, y) in reversed(half[1:-1])]
 
+# Si blender/textures.py a calculé la silhouette moyenne des photos, on l'utilise :
+# chaque photo de maillot épouse alors parfaitement le modèle.
+SIL = os.path.join(os.path.dirname(os.path.abspath(__file__)), "silhouette.json")
+if os.path.exists(SIL):
+    import json
+    outline = [tuple(p) for p in json.load(open(SIL))["outline"]]
+    print("silhouette des photos :", len(outline), "points")
+
 mesh = bpy.data.meshes.new("contour")
 bm = bmesh.new()
 verts = [bm.verts.new((x, y, 0.0)) for (x, y) in outline]
@@ -75,8 +83,8 @@ def dist_to_outline(x, y):
         best = min(best, (a + ab * t - p).length)
     return best
 
-THICK = 0.17   # demi-épaisseur max du torse
-REACH = 0.30   # distance au bord où l'épaisseur max est atteinte
+THICK = 0.15   # demi-épaisseur max du torse
+REACH = 0.26   # distance au bord où l'épaisseur max est atteinte
 for v in obj.data.vertices:
     x, y, z = v.co
     side = 1 if z >= 0 else -1

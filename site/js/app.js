@@ -244,6 +244,7 @@
     document.body.classList.add("locked");
     setTimeout(() => $(".modal-close").focus(), 50);
   }
+  window.openProduct = openModal;
   function renderModalJersey() {
     const p = byId(m.id);
     $("#mFront").innerHTML = face(p);

@@ -419,6 +419,13 @@ h3 { font-size: 1.6rem; }
 @keyframes fade3d { from { opacity: 0; transform: scale(.85) translateY(40px); } }
 .drag-hint { display: none; position: absolute; bottom: 4%; left: 50%; translate: -50% 0; z-index: 2; padding: 8px 14px; border-radius: 999px; font-size: .78rem; color: var(--muted); border: 1px solid var(--line); background: rgba(10, 10, 12, .6); backdrop-filter: blur(6px); pointer-events: none; animation: hint 2.4s ease-in-out infinite; }
 .three-ready .drag-hint { display: block; }
+.drag-hint { bottom: 15%; }
+.jersey-label { display: none; position: absolute; left: 50%; bottom: 2%; translate: -50% 0; z-index: 2; align-items: center; gap: 12px; padding: 8px 8px 8px 18px; border-radius: 999px; background: rgba(20, 20, 24, .75); border: 1px solid var(--line); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); white-space: nowrap; }
+.three-ready .jersey-label { display: flex; }
+.jersey-label-name { font-family: var(--display); font-size: 1.15rem; letter-spacing: .03em; text-transform: uppercase; transition: opacity .3s, transform .3s var(--ease); }
+.jersey-label-name.swap { opacity: 0; transform: translateY(8px); }
+.jersey-label-btn { background: var(--accent); color: var(--accent-ink); font-weight: 600; font-size: .82rem; padding: 8px 14px; border-radius: 999px; transition: background .3s; }
+.jersey-label-btn:hover { background: #fff; }
 .drag-hint.gone { opacity: 0; transition: opacity .6s; animation: none; }
 @keyframes hint { 0%, 100% { transform: translateX(-6px); } 50% { transform: translateX(6px); } }
 
@@ -445,7 +452,8 @@ h3 { font-size: 1.6rem; }
   .perks, .reviews { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 860px) {
-  .three-ready .hero-visual { min-height: 380px; }
+  .three-ready .hero-visual { min-height: 470px; }
+  .drag-hint { bottom: 17%; }
   .nav { position: fixed; inset: 0; background: var(--bg); flex-direction: column; justify-content: center; align-items: center; gap: 28px; clip-path: circle(0 at calc(100% - 40px) 40px); transition: clip-path .7s var(--ease); z-index: -1; }
   .nav a { font-family: var(--display); font-size: 2.6rem; color: var(--text); text-transform: uppercase; }
   .nav.open { clip-path: circle(150% at calc(100% - 40px) 40px); }
