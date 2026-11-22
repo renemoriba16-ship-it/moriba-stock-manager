@@ -77,7 +77,9 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
   letter-spacing: -.06em; line-height: .8; color: var(--sand-deep); white-space: nowrap; user-select: none;
   font-variation-settings: "opsz" 144, "SOFT" 100;
 }
-#bottle { position: relative; z-index: 2; height: min(92svh, 125vw); width: auto; aspect-ratio: 960 / 1200; }
+#bottle { position: relative; z-index: 2; height: min(92svh, 125vw); width: auto; aspect-ratio: 960 / 1200;
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 22%, #000 78%, transparent), linear-gradient(to bottom, transparent, #000 4%, #000 82%, transparent);
+  -webkit-mask-composite: source-in; mask-image: linear-gradient(to right, transparent, #000 22%, #000 78%, transparent), linear-gradient(to bottom, transparent, #000 4%, #000 82%, transparent); mask-composite: intersect; }
 .beats { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
 .beat { position: absolute; max-width: 30ch; }
 .beat h1, .beat h2 { font-size: var(--step-3); }
@@ -209,9 +211,11 @@ li.open .ing-detail { grid-template-rows: 1fr; }
   .footer-top > :first-child { grid-column: 1 / -1; }
 }
 @media (max-width: 720px) {
-  #bottle { height: 70svh; margin-top: -8svh; }
+  .stage-pin { place-items: start center; }
+  #bottle { height: 54svh; margin-top: 9svh; }
+  .beat-1 .btn.ghost { display: none; }
   .beat { max-width: none; left: var(--gutter); right: var(--gutter-r); text-align: left; }
-  .beat-1 { bottom: 6svh; }
+  .beat-1 { bottom: 5svh; }
   .beat-2, .beat-3 { top: auto; bottom: 6svh; text-align: left; }
   .beat-2 p { margin-left: 0; }
   .beat h1, .beat h2 { font-size: var(--step-2); }
@@ -435,7 +439,7 @@ li.open .ing-detail { grid-template-rows: 1fr; }
   const imgs = new Array(FRAMES);
   const loader = document.getElementById('loader'), loadPct = document.getElementById('loadPct');
   let loaded = 0, current = -1;
-  const src = i => `assets/hero/f_${String(i + 1).padStart(3, '0')}.webp`;
+  const src = i => `assets/hero/f_${String(i + 1).padStart(4, '0')}.webp`;
   const draw = i => {
     i = Math.max(0, Math.min(FRAMES - 1, i));
     // fall back to nearest loaded frame while the sequence streams in

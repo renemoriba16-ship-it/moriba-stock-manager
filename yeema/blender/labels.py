@@ -19,12 +19,12 @@ def font(path, size, wght=None, opsz=None):
         print("var font", e)
     return f
 
-def label(name, sub, vol, out, bg=(226, 212, 192), ink=(43, 29, 20), accent=(176, 112, 52), W=2048, H=820):
+def label(name, sub, vol, out, bg=(226, 212, 192), ink=(43, 29, 20), accent=(176, 112, 52), W=2048, H=820, logo=1.0):
     im = Image.new("RGB", (W, H), bg)
     d = ImageDraw.Draw(im)
     cx = W // 2  # front of label at u=0.5
     k = H/820
-    big = font(F, int(330*k), wght=380, opsz=144)
+    big = font(F, int(330*k*logo), wght=380, opsz=144)
     d.text((cx, H*0.36), "yeema", font=big, fill=ink, anchor="mm")
     small = font(I, int(40*k), wght=500)
     d.text((cx, H*0.70), name, font=small, fill=ink, anchor="mm")
@@ -39,6 +39,6 @@ def label(name, sub, vol, out, bg=(226, 212, 192), ink=(43, 29, 20), accent=(176
     im.save(out)
 
 label("HUILE NOURRISSANTE", "BAOBAB · KARITÉ · RICIN", "30 ml — 1.0 fl oz", S+"/tex/label_oil.png", W=2816, H=640)
-label("SHAMPOING DOUCEUR", "AVOCAT · ALOE VERA", "250 ml — 8.4 fl oz", S+"/tex/label_shampoo.png", W=2048, H=1010)
+label("SHAMPOING DOUCEUR", "AVOCAT · ALOE VERA", "250 ml — 8.4 fl oz", S+"/tex/label_shampoo.png", W=2048, H=1010, logo=0.62)
 label("MASQUE RÉPARATEUR", "MANGUE · BEURRE DE CACAO", "200 ml — 6.7 fl oz", S+"/tex/label_mask.png", W=4200, H=520)
 print("ok")
