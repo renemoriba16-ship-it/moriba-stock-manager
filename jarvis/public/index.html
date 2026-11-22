@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>J.A.R.V.I.S.</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Rajdhani:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="grid-bg" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="brand">J.A.R.V.I.S.<span class="sub">Just A Rather Very Intelligent System</span></div>
+    <div class="status">
+      <span id="statusDot" class="dot"></span>
+      <span id="statusText">Initialisation…</span>
+    </div>
+    <div class="top-actions">
+      <button id="inventoryBtn" class="ghost" title="Inventaire complet">Inventaire</button>
+      <button id="themeBtn" class="ghost" title="Changer de thème">◐</button>
+      <button id="resetBtn" class="ghost" title="Nouvelle conversation">↺</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <!-- Colonne gauche -->
+    <section class="col left">
+      <div class="panel">
+        <h2>Horloge</h2>
+        <div id="clock" class="clock">--:--:--</div>
+        <div id="date" class="muted"></div>
+      </div>
+      <div class="panel">
+        <h2>Météo <button id="cityBtn" class="link" title="Changer de ville">✎</button></h2>
+        <div id="weather" class="weather muted">Chargement…</div>
+      </div>
+      <div class="panel">
+        <h2>Minuteurs</h2>
+        <ul id="timers" class="list"><li class="muted">Aucun minuteur</li></ul>
+      </div>
+    </section>
+
+    <!-- Centre -->
+    <section class="col center">
+      <div class="reactor-wrap">
+        <button id="reactor" class="reactor idle" aria-label="Parler à Jarvis">
+          <span class="ring r1"></span><span class="ring r2"></span><span class="ring r3"></span>
+          <span class="core"></span>
+          <canvas id="viz" width="320" height="320"></canvas>
+        </button>
+        <div id="stateLabel" class="state-label">En veille</div>
+      </div>
+
+      <div id="log" class="log" aria-live="polite"></div>
+
+      <div class="suggestions" id="suggestions">
+        <button>Rapport de stock</button>
+        <button>Météo à Conakry</button>
+        <button>Rappelle-moi dans 10 minutes d'appeler le fournisseur</button>
+        <button>Quelles sont les actualités du jour ?</button>
+        <button>Combien font 1250 € en francs guinéens ?</button>
+      </div>
+
+      <form id="form" class="composer" autocomplete="off">
+        <button type="button" id="micBtn" class="mic" title="Parler (Espace maintenu)">🎙</button>
+        <input id="input" placeholder="Parlez ou écrivez à Jarvis…" />
+        <button type="submit" class="send">Envoyer</button>
+      </form>
+      <div class="toggles">
+        <label><input type="checkbox" id="wakeToggle" /> Mot d'éveil « Jarvis »</label>
+        <label><input type="checkbox" id="ttsToggle" checked /> Réponse vocale</label>
+      </div>
+    </section>
+
+    <!-- Colonne droite -->
+    <section class="col right">
+      <div class="panel">
+        <h2>Stock</h2>
+        <div class="stats">
+          <div><b id="stProducts">0</b><span>produits</span></div>
+          <div><b id="stUnits">0</b><span>unités</span></div>
+          <div><b id="stValue">0</b><span>valeur</span></div>
+        </div>
+        <ul id="lowStock" class="list warn"></ul>
+      </div>
+      <div class="panel">
+        <h2>Tâches</h2>
+        <ul id="todos" class="list"><li class="muted">Rien à faire</li></ul>
+      </div>
+      <div class="panel">
+        <h2>Rappels</h2>
+        <ul id="reminders" class="list"><li class="muted">Aucun rappel</li></ul>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="inventory">
+    <div class="dialog-head">
+      <h2>Inventaire</h2>
+      <input id="invSearch" placeholder="Filtrer…" />
+      <button id="invClose" class="ghost">✕</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Produit</th><th>Catégorie</th><th>SKU</th><th>Qté</th><th>Prix</th><th>Seuil</th></tr></thead>
+        <tbody id="invBody"></tbody>
+      </table>
+    </div>
+  </dialog>
+
+  <audio id="beep" preload="auto"></audio>
+  <script src="app.js"></script>
+</body>
+</html>

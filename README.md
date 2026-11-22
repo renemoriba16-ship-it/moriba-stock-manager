@@ -26,3 +26,8 @@ Les contributions sont les bienvenues! N'hésitez pas à soumettre des pull requ
 ## Licence
 
 Ce projet est sous licence MIT.
+
+## J.A.R.V.I.S.
+
+Le dossier [`jarvis/`](jarvis/) contient un assistant personnel vocal multifonction (gestion de stock,
+tâches, rappels, météo, calculs, recherche web…). Voir [jarvis/README.md](jarvis/README.md).
