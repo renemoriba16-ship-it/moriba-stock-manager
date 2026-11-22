@@ -87,6 +87,19 @@ textarea{resize:vertical;min-height:58px}
 .log li{display:grid;grid-template-columns:42px minmax(0,1fr);gap:8px}
 .log time{font-family:var(--display);color:var(--mute);font-variant-numeric:tabular-nums}
 .log b{font-weight:700}
+.ai{font-size:13px;margin:0 0 10px;padding:8px 10px;border-radius:8px;background:var(--paper-2);color:var(--mute)}
+.ai.on{background:#e3f6ec;color:#1d6b45}
+.deliv{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;max-height:520px;overflow:auto}
+.deliv li{border:1px solid var(--line);border-radius:10px;background:#fff;padding:10px 12px;min-width:0}
+.deliv .who{display:flex;justify-content:space-between;gap:8px;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--mute)}
+.deliv .who b{color:var(--ink)}
+.deliv .mis{font-family:var(--serif);font-style:italic;font-size:15px;margin:4px 0 6px}
+.deliv details summary{cursor:pointer;font-size:13px;color:var(--violet)}
+.deliv pre{white-space:pre-wrap;word-wrap:break-word;font:14px/1.5 var(--body);margin:8px 0 0;color:var(--ink)}
+.deliv .st{font-size:12px;color:var(--mute)}
+.deliv .st.run{color:var(--violet)}
+.copy{margin-top:8px;font:600 13px var(--body);background:var(--paper-2);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:5px 10px;cursor:pointer}
+.empty{font-size:13px;color:var(--mute);margin:0}
 @media (prefers-reduced-motion:reduce){.bar i{transition:none}}
 </style>
 
@@ -147,6 +160,12 @@ textarea{resize:vertical;min-height:58px}
           <button class="send" type="submit">Envoyer la mission</button>
           <p class="hint">En mode automatique, Hawa, la directrice générale, lit la mission et va la confier au pôle compétent.</p>
         </form>
+      </section>
+
+      <section class="card">
+        <h2>Livrables des agents</h2>
+        <p class="ai" id="aiState">Connexion à Claude en cours…</p>
+        <ul class="deliv" id="deliv"></ul>
       </section>
 
       <section class="card">
@@ -471,6 +490,79 @@ function meeting(hawa) {
 }
 const meetLines = ["Les ventes de riz ont bien tenu.", "On manque de bras samedi matin.", "Je propose une promo sur l'huile.", "Le camion passe au garage jeudi.", "La trésorerie est saine ce mois-ci.", "Les clients aiment le groupe WhatsApp."];
 
+/* =================== Travail réel (Claude) =================== */
+let sampleFn = null, dbCol = null, remote = [], jobs = [];
+const delivEl = document.getElementById("deliv"), aiEl = document.getElementById("aiState");
+(async () => {
+  const use = window.claude && window.claude.use ? n => window.claude.use(n).catch(() => null) : async () => null;
+  const [smp, db] = await Promise.all([use("sample"), use("db")]);
+  sampleFn = smp;
+  if (db) {
+    dbCol = db.collection("livrables");
+    dbCol.orderBy("at", "desc").limit(30).onSnapshot(snap => { remote = snap.docs.map(d => ({id:d.id, ...d.data(), status:"terminé"})); renderDeliv(); }, () => {});
+  }
+  aiEl.className = "ai" + (sampleFn ? " on" : "");
+  aiEl.textContent = sampleFn
+    ? "Les agents travaillent pour de vrai : chaque mission produit un livrable rédigé par Claude, gardé ici et visible sur tous vos appareils."
+    : "Ouvrez cette page dans Claude (navigateur ou appli mobile) pour que les agents rédigent de vrais livrables. Ici, les missions restent simulées.";
+  renderDeliv();
+})();
+const errCopy = {not_granted:"Vous n'avez pas autorisé la page à utiliser Claude.", rate_limited:"Trop de demandes pour l'instant. Réessayez dans quelques minutes.", session_expired:"Reconnectez-vous à Claude puis réessayez.", refused:"Claude n'a pas pu traiter cette mission. Reformulez-la.", sampling_disabled:"Claude n'est pas disponible sur ce compte."};
+async function realWork(job, agent) {
+  if (!sampleFn) { job.status = "simulé"; renderDeliv(); return; }
+  const stock = products.map(p => `${p.name} : ${p.qty} en stock (seuil ${p.min}, prix ${p.price} F)`).join("; ");
+  const prompt = `Tu es ${job.name}, ${job.role} au pôle « ${job.dept} » du QG Moriba, un commerce de produits alimentaires et d'hygiène (vente au détail et en gros, prix en francs CFA).
+État actuel du stock : ${stock}.
+Ta mission : « ${job.mission} ».
+Produis directement le livrable demandé, prêt à l'emploi, en français : par exemple le message à envoyer, le plan, la liste, l'analyse ou le texte. Sois concret et concis (250 mots au plus). Si une information te manque, fais une hypothèse raisonnable et signale-la en une ligne à la fin. Pas de préambule, pas de formule de politesse sur ton rôle.`;
+  try {
+    const {text} = await sampleFn(prompt, {cache:false, onText: ({text}) => { job.text = text; job.status = "en cours"; renderDeliv(); }});
+    job.text = text; job.status = "terminé";
+    log(agent, `a livré le résultat de la mission « ${job.mission} ».`);
+    say(agent, "Livrable prêt !"); showCard(agent, "a livré sa mission", 8);
+    if (dbCol) { try { await dbCol.doc(job.id).set({agent:job.agent, name:job.name, role:job.role, dept:job.dept, mission:job.mission, text:job.text, at:job.at}); jobs = jobs.filter(j => j !== job); } catch (e) { job.note = "Livrable non sauvegardé : il disparaîtra au rechargement."; } }
+  } catch (e) {
+    job.status = "erreur"; job.text = e.code === "refused" ? "" : (e.text || job.text);
+    job.note = errCopy[e.code] || "La connexion a été interrompue. Renvoyez la mission pour réessayer.";
+  }
+  renderDeliv();
+}
+function renderDeliv() {
+  const seen = new Set(), all = [];
+  for (const j of [...jobs, ...remote]) if (!seen.has(j.id)) { seen.add(j.id); all.push(j); }
+  all.sort((a, b) => b.at - a.at);
+  delivEl.textContent = "";
+  if (!all.length) { const p = document.createElement("li"); p.className = "empty"; p.style.border = "0"; p.style.background = "none"; p.textContent = "Aucun livrable pour l'instant. Confiez une mission ci-dessus : l'agent choisi la réalise et son résultat apparaît ici."; delivEl.append(p); return; }
+  all.forEach((j, i) => {
+    const li = document.createElement("li");
+    const who = document.createElement("div"); who.className = "who";
+    const b = document.createElement("span"); b.innerHTML = "<b></b> · "; b.querySelector("b").textContent = j.name; b.append(j.dept);
+    const t = document.createElement("span"); t.textContent = new Date(j.at).toLocaleString("fr-FR", {day:"2-digit", month:"short", hour:"2-digit", minute:"2-digit"});
+    who.append(b, t);
+    const mis = document.createElement("div"); mis.className = "mis"; mis.textContent = j.mission;
+    li.append(who, mis);
+    if (j.status !== "terminé") { const st = document.createElement("div"); st.className = "st" + (j.status === "en cours" ? " run" : ""); st.textContent = j.status === "en cours" ? (j.text ? `${j.name} rédige…` : `${j.name} réfléchit…`) : j.status === "simulé" ? "Mission simulée : ouvrez la page dans Claude pour un vrai livrable." : j.note; li.append(st); }
+    if (j.text) {
+      const det = document.createElement("details"); if (i < 2 || j.status !== "terminé") det.open = true;
+      const sum = document.createElement("summary"); sum.textContent = "Voir le livrable";
+      const pre = document.createElement("pre"); pre.textContent = j.text;
+      det.append(sum, pre);
+      if (j.status === "terminé") {
+        const c = document.createElement("button"); c.type = "button"; c.className = "copy"; c.textContent = "Copier";
+        c.onclick = () => {
+          const ok = () => { c.textContent = "Copié"; setTimeout(() => c.textContent = "Copier", 1500); };
+          const fallback = () => { const r = document.createRange(); r.selectNodeContents(pre); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); c.textContent = "Texte sélectionné"; };
+          try { navigator.clipboard.writeText(j.text).then(ok, fallback); } catch { fallback(); }
+        };
+        det.append(c);
+      }
+      li.append(det);
+      if (j.note && j.status === "terminé") { const st = document.createElement("div"); st.className = "st"; st.textContent = j.note; li.append(st); }
+    }
+    delivEl.append(li);
+  });
+}
+
 /* =================== Missions =================== */
 const routes = [
   [/stock|inventaire|compt(er|e)|étag|réserve|péremp/i, "inventaire"],
@@ -491,7 +583,9 @@ function mission(text, who) {
   let target;
   if (who.startsWith("a:")) target = AM[who.slice(2)];
   else { const dept = who === "auto" ? (routes.find(([re]) => re.test(text)) || [0, "direction"])[1] : who.slice(2); target = pickFree(dept); }
-  const doWork = ag => assign(ag, [goto("seat"), wait(10, `Mission : ${text}`, {seat:true, show:true}), run(() => { log(ag, `a terminé la mission « ${text} ».`); say(ag, "Mission accomplie !"); })]);
+  const job = {id:"l" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), agent:target.id, name:target.name, role:target.role, dept:target.dept.name, mission:text, text:"", status:"en cours", at:Date.now()};
+  jobs.unshift(job); renderDeliv(); realWork(job, target);
+  const doWork = ag => assign(ag, [goto("seat"), wait(10, `Mission : ${text}`, {seat:true, show:true}), run(() => { if (!sampleFn) { log(ag, `a terminé la mission « ${text} » (simulation).`); say(ag, "Mission accomplie !"); } })]);
   const hawa = AM.hawa;
   if (who === "auto" && target !== hawa) {
     log(hawa, `confie la mission « ${text} » à ${target.name} (${target.dept.name}).`);
