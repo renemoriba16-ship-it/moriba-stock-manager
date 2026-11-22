@@ -8,7 +8,8 @@ def scene_base(res, bg=(0.80,0.72,0.62)):
     shadow_floor(); studio(); return sc, materials()
 
 # individual stills
-for name in ["oil", "shampoo", "mask"]:
+import os
+for name in os.environ.get("ONLY", "oil,shampoo,mask").split(","):
     sc, M = scene_base((900, 1125))
     if name == "oil":
         r, d = oil_bottle(S, M); camera((0,-7.6,1.6), (0,0,1.17), lens=60)

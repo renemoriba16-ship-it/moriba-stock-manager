@@ -165,7 +165,7 @@ def materials():
         'gold': mat("Gold", base=(0.95, 0.70, 0.40), metallic=1.0, rough=0.22),
         'rubber': mat("Rubber", base=(0.018, 0.012, 0.009), rough=0.45, coat=0.15),
         'espresso': mat("Espresso", base=(0.05, 0.032, 0.022), rough=0.35, coat=0.5),
-        'frost': mat("Frost", base=(0.16, 0.075, 0.04), rough=0.42, coat=0.35),
+        'frost': mat("Frost", base=(0.045, 0.022, 0.013), rough=0.38, coat=0.25),
         'cream': mat("CreamMat", base=(0.96, 0.84, 0.66), rough=0.45, sss=0.4),
     }
 

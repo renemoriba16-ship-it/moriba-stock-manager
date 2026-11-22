@@ -39,6 +39,6 @@ def label(name, sub, vol, out, bg=(226, 212, 192), ink=(43, 29, 20), accent=(176
     im.save(out)
 
 label("HUILE NOURRISSANTE", "BAOBAB · KARITÉ · RICIN", "30 ml — 1.0 fl oz", S+"/tex/label_oil.png", W=2816, H=640)
-label("SHAMPOING DOUCEUR", "AVOCAT · ALOE VERA", "250 ml — 8.4 fl oz", S+"/tex/label_shampoo.png", W=2048, H=1010, logo=0.62)
+label("SHAMPOING DOUCEUR", "AVOCAT · ALOE VERA", "250 ml — 8.4 fl oz", S+"/tex/label_shampoo.png", W=2048, H=1010, logo=0.42)
 label("MASQUE RÉPARATEUR", "MANGUE · BEURRE DE CACAO", "200 ml — 6.7 fl oz", S+"/tex/label_mask.png", W=4200, H=520)
 print("ok")

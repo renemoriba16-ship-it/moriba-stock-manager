@@ -21,7 +21,7 @@
   --ink-soft: #6b5546;
   --amber: #a95a1b;
   --honey: #e2a04a;
-  --night: #1a110c;         /* sampled from the oil-loop render */
+  --night: #211811;         /* sampled from the oil-loop render */
   --night-ink: #f1e4d2;
   --line: rgba(42, 27, 19, .16);
   --f-display: "Fraunces", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
@@ -155,7 +155,9 @@ li.open .ing-detail { grid-template-rows: 1fr; }
 .ritual { background: var(--sand); padding-block: clamp(80px, 12vw, 160px); overflow: hidden; }
 .ritual-hero { position: relative; margin-bottom: clamp(48px, 7vw, 96px); }
 .ritual-hero img { width: 100%; height: auto; aspect-ratio: 1800 / 1100; object-fit: cover; }
-.ritual-hero h2 { position: absolute; left: 0; top: 0; font-size: var(--step-4); max-width: 9ch; z-index: 2; }
+.ritual-hero { display: grid; gap: clamp(16px, 3vw, 40px); }
+.ritual-hero h2 { font-size: var(--step-4); }
+.ritual-hero .frame { overflow: hidden; border-radius: 4px; }
 .steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(20px, 3vw, 48px); counter-reset: step; }
 .step { border-top: 1px solid var(--ink); padding-top: 20px; }
 .step .n { font-family: var(--f-mono); font-size: .8rem; color: var(--amber); }
@@ -194,8 +196,8 @@ li.open .ing-detail { grid-template-rows: 1fr; }
 .footer h4 { font-family: var(--f-mono); font-weight: 400; font-size: .75rem; letter-spacing: .12em; text-transform: uppercase; opacity: .55; margin: 0 0 16px; }
 .footer ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
 .footer ul a { text-decoration: none; opacity: .85; }
-.giant { font-family: var(--f-display); font-weight: 300; font-size: clamp(6rem, 27vw, 30rem); letter-spacing: -.06em; line-height: .78; margin-top: clamp(48px, 8vw, 120px); color: rgba(243, 236, 226, .9); font-variation-settings: "opsz" 144, "SOFT" 100; }
-.legal { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-top: 28px; font-family: var(--f-mono); font-size: .75rem; opacity: .55; }
+.giant { font-family: var(--f-display); font-weight: 300; font-size: clamp(6rem, 27vw, 30rem); letter-spacing: -.06em; line-height: .78; padding-bottom: .2em; margin-top: clamp(48px, 8vw, 120px); color: rgba(243, 236, 226, .9); font-variation-settings: "opsz" 144, "SOFT" 100; }
+.legal { position: relative; z-index: 1; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-top: 28px; font-family: var(--f-mono); font-size: .75rem; opacity: .55; }
 
 /* ---------- Reveal ---------- */
 .reveal { will-change: transform; }
@@ -221,7 +223,6 @@ li.open .ing-detail { grid-template-rows: 1fr; }
   .beat h1, .beat h2 { font-size: var(--step-2); }
   .beat p { font-size: .95rem; }
   .progress { display: none; }
-  .ritual-hero h2 { position: static; margin-bottom: 20px; }
   .types { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -350,7 +351,7 @@ li.open .ing-detail { grid-template-rows: 1fr; }
     <div class="wrap">
       <div class="ritual-hero">
         <h2 class="reveal">Le rituel <em>du soir</em></h2>
-        <img id="group" src="assets/products/group.webp" alt="Les trois soins yeema : shampoing, huile et masque" loading="lazy" width="1800" height="1100">
+        <div class="frame"><img id="group" src="assets/products/group.webp" alt="Les trois soins yeema : shampoing, huile et masque" loading="lazy" width="1800" height="1100"></div>
       </div>
       <div class="steps">
         <div class="step reveal"><span class="n">Étape 1</span><h3>Laver</h3><p>Massez le shampoing douceur sur cuir chevelu mouillé. La mousse reste légère, la boucle garde sa forme.</p><span class="when">2 fois par semaine</span></div>
