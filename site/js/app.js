@@ -7,7 +7,7 @@
   const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const finePointer = matchMedia("(pointer: fine)").matches;
   const SIZES = ["XS", "S", "M", "L", "XL", "XXL"];
-  const CAT_LABEL = { club: "Club", selection: "Sélection", retro: "Rétro" };
+  const CAT_LABEL = { club: "Club", selection: "Sélection" };
 
   const money = (n) => {
     const v = n.toLocaleString("fr-FR", { maximumFractionDigits: 2 }).replace(/\u202f|\u00a0/g, " ");
@@ -70,7 +70,8 @@
       const t0 = performance.now(), dur = reduceMotion ? 1 : 1800;
       const tick = (t) => {
         const k = Math.min(1, (t - t0) / dur), ease = 1 - Math.pow(1 - k, 4);
-        el.textContent = (end * ease).toFixed(dec) + (k === 1 && end >= 1000 ? "+" : "");
+        const v = dec ? (end * ease).toFixed(dec) : Math.round(end * ease).toLocaleString("fr-FR").replace(/\u202f|\u00a0/g, " ");
+        el.textContent = v + (k === 1 && "plus" in el.dataset ? "+" : "");
         if (k < 1) requestAnimationFrame(tick);
       };
       requestAnimationFrame(tick);
@@ -188,25 +189,6 @@
   });
   renderProducts();
 
-  /* ---------------- Flocage studio ---------------- */
-  const flModel = $("#flModel");
-  flModel.innerHTML = P.filter((p) => p.stock > 0).map((p) => `<option value="${p.id}">${escapeXML(p.name)} — ${money(p.price)}</option>`).join("");
-  const flFlip = $("#flFlip");
-  function renderFlocage() {
-    const p = byId(flModel.value);
-    const name = $("#flName").value, number = $("#flNumber").value;
-    $("#flFront").innerHTML = jerseySVG(p, { number });
-    $("#flBack").innerHTML = jerseySVG(p, { side: "back", name, number });
-  }
-  ["#flName", "#flNumber"].forEach((s) => $(s).addEventListener("input", () => { flFlip.classList.add("turned"); renderFlocage(); }));
-  flModel.addEventListener("change", renderFlocage);
-  $("#flTurn").addEventListener("click", () => flFlip.classList.toggle("turned"));
-  $("#flAdd").addEventListener("click", () => {
-    addToCart({ id: flModel.value, size: "M", qty: 1, flName: $("#flName").value.toUpperCase().slice(0, 12), flNumber: $("#flNumber").value }, $("#flBack svg"));
-  });
-  renderFlocage();
-  setTimeout(() => flFlip.classList.add("turned"), 1200);
-
   /* ---------------- Product modal ---------------- */
   const modal = $("#modal");
   const m = { id: null, size: null, qty: 1 };
@@ -225,10 +207,6 @@
     stock.textContent = p.stock <= 0 ? "Rupture de stock — contacte-nous pour une précommande" : p.stock <= 5 ? `Plus que ${p.stock} en stock, fais vite !` : "En stock — expédié sous 48h";
     stock.classList.toggle("low", p.stock <= 5);
     $("#mSizes").innerHTML = SIZES.map((s) => `<button type="button" data-size="${s}">${s}</button>`).join("");
-    $("#mFlPrice").textContent = money(S.flocagePrice);
-    $("#mFlocage").checked = false;
-    $("#mFlFields").hidden = true;
-    $("#mFlName").value = ""; $("#mFlNumber").value = "";
     $("#mQty").textContent = "1";
     $("#mFlip").classList.remove("turned");
     $("#mTurn").textContent = "↻ Voir le dos";
@@ -241,10 +219,9 @@
     setTimeout(() => $(".modal-close").focus(), 50);
   }
   function renderModalJersey() {
-    const p = byId(m.id), fl = $("#mFlocage").checked;
-    const name = fl ? $("#mFlName").value : "", number = fl ? $("#mFlNumber").value : "";
-    $("#mFront").innerHTML = jerseySVG(p, { number });
-    $("#mBack").innerHTML = jerseySVG(p, { side: "back", name, number });
+    const p = byId(m.id);
+    $("#mFront").innerHTML = jerseySVG(p);
+    $("#mBack").innerHTML = jerseySVG(p, { side: "back", name: S.backName || S.name, number: 10 });
   }
   function closeModal() {
     modal.classList.remove("open");
@@ -264,12 +241,6 @@
     f.classList.toggle("turned");
     $("#mTurn").textContent = f.classList.contains("turned") ? "↻ Voir la face" : "↻ Voir le dos";
   });
-  $("#mFlocage").addEventListener("change", (e) => {
-    $("#mFlFields").hidden = !e.target.checked;
-    if (e.target.checked) { $("#mFlip").classList.add("turned"); $("#mFlName").focus(); }
-    renderModalJersey();
-  });
-  ["#mFlName", "#mFlNumber"].forEach((s) => $(s).addEventListener("input", () => { $("#mFlip").classList.add("turned"); renderModalJersey(); }));
   $("#mMinus").addEventListener("click", () => { m.qty = Math.max(1, m.qty - 1); $("#mQty").textContent = m.qty; });
   $("#mPlus").addEventListener("click", () => { m.qty = Math.min(byId(m.id).stock || 1, m.qty + 1); $("#mQty").textContent = m.qty; });
   $("#mAdd").addEventListener("click", () => {
@@ -278,12 +249,7 @@
       $("#mSizes").animate([{ transform: "translateX(0)" }, { transform: "translateX(-8px)" }, { transform: "translateX(8px)" }, { transform: "translateX(0)" }], { duration: 350 });
       return;
     }
-    const fl = $("#mFlocage").checked;
-    addToCart({
-      id: m.id, size: m.size, qty: m.qty,
-      flName: fl ? $("#mFlName").value.toUpperCase().slice(0, 12) : "",
-      flNumber: fl ? $("#mFlNumber").value : "",
-    }, $("#mFlip .flip-face.front svg"));
+    addToCart({ id: m.id, size: m.size, qty: m.qty }, $("#mFlip .flip-face.front svg"));
     closeModal();
   });
 
@@ -291,11 +257,10 @@
   const KEY = "moriba-cart";
   let cart = [];
   try { cart = JSON.parse(localStorage.getItem(KEY)) || []; } catch (_) { cart = []; }
-  cart = cart.filter((it) => byId(it.id));
+  cart = cart.filter((it) => byId(it.id)).map(({ id, size, qty }) => ({ id, size, qty }));
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(cart)); } catch (_) {} };
-  const keyOf = (it) => [it.id, it.size, it.flName || "", it.flNumber || ""].join("|");
-  const hasFl = (it) => !!(it.flName || it.flNumber !== "" && it.flNumber !== undefined);
-  const unitPrice = (it) => byId(it.id).price + (hasFl(it) ? S.flocagePrice : 0);
+  const keyOf = (it) => it.id + "|" + it.size;
+  const unitPrice = (it) => byId(it.id).price;
 
   function addToCart(item, sourceEl) {
     const p = byId(item.id);
@@ -303,8 +268,9 @@
     const existing = cart.find((c) => keyOf(c) === k);
     const inCart = cart.filter((c) => c.id === item.id).reduce((s, c) => s + c.qty, 0);
     if (inCart + item.qty > p.stock) { toast(`Stock insuffisant (${p.stock} dispo)`); return; }
-    if (existing) existing.qty += item.qty; else cart.push({ ...item, flNumber: item.flNumber ?? "" });
+    if (existing) existing.qty += item.qty; else cart.push({ ...item });
     save();
+    header.classList.remove("hidden");
     flyToCart(sourceEl, () => { renderCart(); bumpCount(); });
     toast(`✓ ${p.name} (${item.size}) ajouté`);
   }
@@ -332,41 +298,31 @@
     c.classList.remove("bump"); void c.offsetWidth; c.classList.add("bump");
   }
 
-  function totals() {
-    const sub = cart.reduce((s, it) => s + unitPrice(it) * it.qty, 0);
-    const ship = sub === 0 || sub >= S.freeShippingFrom ? 0 : S.shippingPrice;
-    return { sub, ship, total: sub + ship };
-  }
+  const totalOf = () => cart.reduce((s, it) => s + unitPrice(it) * it.qty, 0);
 
   function renderCart() {
     const count = cart.reduce((s, it) => s + it.qty, 0);
     $("#cartCount").textContent = count;
-    const { sub, ship, total } = totals();
+    const total = totalOf();
     const list = $("#cartItems");
     if (!cart.length) {
       list.innerHTML = `<li class="cart-empty"><span>👕</span>Ton panier est vide.<br/>Va vite choisir un maillot !</li>`;
     } else {
       list.innerHTML = cart.map((it, i) => {
         const p = byId(it.id);
-        const fl = hasFl(it) ? ` • Flocage ${escapeXML(it.flName || "")} ${escapeXML(String(it.flNumber || ""))}` : "";
         return `
         <li class="cart-item" data-i="${i}" style="animation-delay:${i * 50}ms">
-          <div class="cart-thumb">${jerseySVG(p, hasFl(it) ? { side: "back", name: it.flName, number: it.flNumber } : {})}</div>
+          <div class="cart-thumb">${jerseySVG(p)}</div>
           <div>
             <h4>${escapeXML(p.name)}</h4>
-            <small>Taille ${it.size}${fl}</small>
+            <small>Taille ${it.size} • ${money(unitPrice(it))} l'unité</small>
             <div class="qty"><button data-act="minus" aria-label="Moins">−</button><span>${it.qty}</span><button data-act="plus" aria-label="Plus">+</button></div>
           </div>
           <div><div class="line-price">${money(unitPrice(it) * it.qty)}</div><button class="rm" data-act="rm">Retirer</button></div>
         </li>`;
       }).join("");
     }
-    $("#subTotal").textContent = money(sub);
-    $("#shipCost").textContent = ship === 0 ? (sub ? "Offerte 🎉" : "—") : money(ship);
     $("#total").textContent = money(total);
-    const left = S.freeShippingFrom - sub;
-    $("#shipText").innerHTML = left > 0 ? `Plus que <b>${money(left)}</b> pour la livraison offerte` : `🎉 <b>Livraison offerte</b> débloquée !`;
-    $("#shipFill").style.width = Math.min(100, (sub / S.freeShippingFrom) * 100) + "%";
     $("#checkout").disabled = !cart.length;
   }
 
@@ -407,16 +363,16 @@
     const name = $("#custName").value.trim(), city = $("#custCity").value.trim();
     if (!name || !city) { toast("Indique ton nom et ta ville 📦"); (!name ? $("#custName") : $("#custCity")).focus(); return; }
     try { localStorage.setItem("moriba-name", name); localStorage.setItem("moriba-city", city); } catch (_) {}
-    const { sub, ship, total } = totals();
+    const total = totalOf();
     const lines = cart.map((it) => {
       const p = byId(it.id);
-      const fl = hasFl(it) ? ` — flocage « ${it.flName || "-"} ${it.flNumber || ""} »` : "";
-      return `• ${it.qty} × ${p.name} (${it.size})${fl} : ${money(unitPrice(it) * it.qty)}`;
+      return `• ${it.qty} × ${p.name} (taille ${it.size}) : ${money(unitPrice(it) * it.qty)}`;
     });
     const msg = [
       `Bonjour ${S.name} 👋, je souhaite commander :`, "", ...lines, "",
-      `Sous-total : ${money(sub)}`, `Livraison : ${ship ? money(ship) : "offerte"}`, `*Total : ${money(total)}*`, "",
-      `Nom : ${name}`, `Livraison : ${city}`,
+      `*Total maillots : ${money(total)}*`, "",
+      `Nom : ${name}`, `Lieu de livraison : ${city}`, "",
+      "Merci de me confirmer le prix de la livraison 🙏",
     ].join("\n");
     window.open(`https://wa.me/${S.whatsapp}?text=${encodeURIComponent(msg)}`, "_blank", "noopener");
   });

@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>SENSEY’S JERSEYS — Boutique de maillots</title>
-  <meta name="description" content="Maillots de foot club, sélections et rétro. Flocage personnalisé, livraison rapide." />
+  <meta name="description" content="Maillots de foot clubs et sélections à 180 000 GNF. Commande sur WhatsApp, livraison partout." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -19,7 +19,6 @@
     <a href="#top" class="logo" data-shop-name>SENSEY’S JERSEYS</a>
     <nav class="nav" id="nav">
       <a href="#catalogue">Catalogue</a>
-      <a href="#flocage">Flocage</a>
       <a href="#avis">Avis</a>
       <a href="#faq">FAQ</a>
       <a href="#contact">Contact</a>
@@ -48,11 +47,11 @@
       <p class="hero-sub reveal" data-tagline></p>
       <div class="hero-cta reveal">
         <a href="#catalogue" class="btn btn-primary magnetic">Voir le catalogue <span class="arrow">→</span></a>
-        <a href="#flocage" class="btn btn-ghost magnetic">Personnaliser</a>
+        <a href="#contact" class="btn btn-ghost magnetic">Nous contacter</a>
       </div>
       <ul class="hero-stats reveal">
-        <li><strong data-count="1200">0</strong><span>maillots vendus</span></li>
-        <li><strong data-count="48">0</strong><span>modèles</span></li>
+        <li><strong data-count="1200" data-plus>0</strong><span>maillots vendus</span></li>
+        <li><strong data-count="180000">0</strong><span>GNF le maillot</span></li>
         <li><strong data-count="4.9" data-decimals="1">0</strong><span>note clients</span></li>
       </ul>
     </div>
@@ -66,8 +65,8 @@
   <!-- ============ MARQUEE ============ -->
   <div class="marquee" aria-hidden="true">
     <div class="marquee-track">
-      <span>LIVRAISON RAPIDE</span><i>✦</i><span>FLOCAGE OFFERT DÈS 2 MAILLOTS</span><i>✦</i><span>QUALITÉ PREMIUM</span><i>✦</i><span>PAIEMENT SÉCURISÉ</span><i>✦</i><span>ÉCHANGE 14 JOURS</span><i>✦</i>
-      <span>LIVRAISON RAPIDE</span><i>✦</i><span>FLOCAGE OFFERT DÈS 2 MAILLOTS</span><i>✦</i><span>QUALITÉ PREMIUM</span><i>✦</i><span>PAIEMENT SÉCURISÉ</span><i>✦</i><span>ÉCHANGE 14 JOURS</span><i>✦</i>
+      <span>LIVRAISON PARTOUT</span><i>✦</i><span>TOUS LES MAILLOTS À 180 000 GNF</span><i>✦</i><span>QUALITÉ PREMIUM</span><i>✦</i><span>PAIEMENT SÉCURISÉ</span><i>✦</i><span>ÉCHANGE 14 JOURS</span><i>✦</i>
+      <span>LIVRAISON PARTOUT</span><i>✦</i><span>TOUS LES MAILLOTS À 180 000 GNF</span><i>✦</i><span>QUALITÉ PREMIUM</span><i>✦</i><span>PAIEMENT SÉCURISÉ</span><i>✦</i><span>ÉCHANGE 14 JOURS</span><i>✦</i>
     </div>
   </div>
 
@@ -80,7 +79,6 @@
     <div class="cat-grid">
       <button class="cat-card reveal tilt" data-goto="club"><span class="cat-num">01</span><h3>Clubs</h3><p>Domicile, extérieur, third</p><span class="cat-arrow">→</span></button>
       <button class="cat-card reveal tilt" data-goto="selection"><span class="cat-num">02</span><h3>Sélections</h3><p>Spécial Coupe 2026</p><span class="cat-arrow">→</span></button>
-      <button class="cat-card reveal tilt" data-goto="retro"><span class="cat-num">03</span><h3>Rétro</h3><p>Les légendes reviennent</p><span class="cat-arrow">→</span></button>
     </div>
   </section>
 
@@ -95,8 +93,7 @@
         <button class="chip active" data-filter="all">Tous</button>
         <button class="chip" data-filter="club">Clubs</button>
         <button class="chip" data-filter="selection">Sélections</button>
-        <button class="chip" data-filter="retro">Rétro</button>
-      </div>
+              </div>
       <div class="toolbar-right">
         <input type="search" id="search" placeholder="Rechercher un maillot…" aria-label="Rechercher" />
         <select id="sort" aria-label="Trier">
@@ -111,35 +108,9 @@
     <p class="empty" id="empty" hidden>Aucun maillot ne correspond à ta recherche.</p>
   </section>
 
-  <!-- ============ FLOCAGE ============ -->
-  <section class="section flocage" id="flocage">
-    <div class="flocage-grid">
-      <div class="flocage-text reveal">
-        <p class="eyebrow">Atelier flocage</p>
-        <h2>Ton nom.<br/>Ton numéro.</h2>
-        <p>Personnalise n'importe quel maillot avec ton nom et ton numéro, imprimés avec la police officielle. Essaie en direct :</p>
-        <div class="flocage-form">
-          <label>Nom <input type="text" id="flName" maxlength="12" value="SENSEY" /></label>
-          <label>Numéro <input type="number" id="flNumber" min="0" max="99" value="10" /></label>
-          <label>Modèle <select id="flModel"></select></label>
-        </div>
-        <button class="btn btn-primary magnetic" id="flAdd">Ajouter au panier</button>
-      </div>
-      <div class="flocage-preview reveal">
-        <div class="flip" id="flFlip">
-          <div class="flip-inner">
-            <div class="flip-face front" id="flFront"></div>
-            <div class="flip-face back" id="flBack"></div>
-          </div>
-        </div>
-        <button class="btn btn-ghost small" id="flTurn">↻ Retourner</button>
-      </div>
-    </div>
-  </section>
-
   <!-- ============ AVANTAGES ============ -->
   <section class="section perks">
-    <div class="perk reveal"><span class="perk-ico">🚚</span><h3>Livraison rapide</h3><p>Expédition sous 24/48h, suivi inclus.</p></div>
+    <div class="perk reveal"><span class="perk-ico">🚚</span><h3>Livraison rapide</h3><p>Partout, tarif selon ton lieu.</p></div>
     <div class="perk reveal"><span class="perk-ico">🧵</span><h3>Qualité premium</h3><p>Tissu respirant, coutures renforcées.</p></div>
     <div class="perk reveal"><span class="perk-ico">🔁</span><h3>Échange facile</h3><p>Taille pas bonne ? Échange sous 14 jours.</p></div>
     <div class="perk reveal"><span class="perk-ico">💬</span><h3>Commande WhatsApp</h3><p>Une question ? On répond en direct.</p></div>
@@ -152,8 +123,8 @@
       <h2>Avis clients</h2>
     </div>
     <div class="reviews" id="reviews">
-      <figure class="review reveal"><div class="stars">★★★★★</div><blockquote>Qualité au top, flocage parfait. Reçu en 2 jours !</blockquote><figcaption>Amadou K.</figcaption></figure>
-      <figure class="review reveal"><div class="stars">★★★★★</div><blockquote>Le rétro 98 est magnifique, exactement comme sur les photos.</blockquote><figcaption>Sarah M.</figcaption></figure>
+      <figure class="review reveal"><div class="stars">★★★★★</div><blockquote>Qualité au top, tissu agréable. Reçu en 2 jours !</blockquote><figcaption>Amadou K.</figcaption></figure>
+      <figure class="review reveal"><div class="stars">★★★★★</div><blockquote>Le maillot de la sélection est magnifique, exactement comme sur les photos.</blockquote><figcaption>Sarah M.</figcaption></figure>
       <figure class="review reveal"><div class="stars">★★★★★</div><blockquote>Commande par WhatsApp super simple, vendeur très réactif.</blockquote><figcaption>Yannick D.</figcaption></figure>
       <figure class="review reveal"><div class="stars">★★★★☆</div><blockquote>Taillent un peu petit, prenez une taille au-dessus. Sinon parfait.</blockquote><figcaption>Fatou S.</figcaption></figure>
     </div>
@@ -166,10 +137,10 @@
       <h2>FAQ</h2>
     </div>
     <div class="faq-list">
-      <details class="reveal"><summary>Comment passer commande ?</summary><p>Ajoute tes maillots au panier, choisis ta taille et ton flocage, puis clique sur « Commander via WhatsApp ». Ta commande arrive directement chez nous et on confirme le paiement et la livraison avec toi.</p></details>
-      <details class="reveal"><summary>Quels sont les délais de livraison ?</summary><p>Les commandes sont expédiées sous 24 à 48h. Comptez 2 à 5 jours ouvrés selon votre ville.</p></details>
+      <details class="reveal"><summary>Comment passer commande ?</summary><p>Ajoute tes maillots au panier, choisis ta taille, puis clique sur « Commander via WhatsApp ». Ta commande arrive directement chez nous et on confirme le paiement et la livraison avec toi.</p></details>
+      <details class="reveal"><summary>Quels sont les délais de livraison ?</summary><p>Les commandes sont expédiées sous 24 à 48h. Le prix et le délai de livraison dépendent de ton lieu : on te les confirme sur WhatsApp au moment de la commande.</p></details>
       <details class="reveal"><summary>Comment choisir ma taille ?</summary><p>Nos maillots suivent la coupe standard. Si tu hésites entre deux tailles ou si tu aimes porter large, prends la taille au-dessus.</p></details>
-      <details class="reveal"><summary>Puis-je échanger un maillot ?</summary><p>Oui, sous 14 jours, si le maillot n'est pas floqué et dans son état d'origine.</p></details>
+      <details class="reveal"><summary>Puis-je échanger un maillot ?</summary><p>Oui, sous 14 jours, si le maillot est dans son état d'origine.</p></details>
       <details class="reveal"><summary>Quels moyens de paiement acceptez-vous ?</summary><p>Virement, mobile money, carte ou espèces à la livraison selon la zone. On te confirme les options sur WhatsApp.</p></details>
     </div>
   </section>
@@ -209,11 +180,6 @@
         <p class="m-stock" id="mStock"></p>
         <p class="label">Taille</p>
         <div class="sizes" id="mSizes"></div>
-        <label class="toggle"><input type="checkbox" id="mFlocage" /> <span>Ajouter un flocage (<b id="mFlPrice"></b>)</span></label>
-        <div class="m-flocage" id="mFlFields" hidden>
-          <input type="text" id="mFlName" maxlength="12" placeholder="NOM" />
-          <input type="number" id="mFlNumber" min="0" max="99" placeholder="N°" />
-        </div>
         <div class="qty-row">
           <div class="qty"><button id="mMinus" aria-label="Moins">−</button><span id="mQty">1</span><button id="mPlus" aria-label="Plus">+</button></div>
           <button class="btn btn-primary grow" id="mAdd">Ajouter au panier</button>
@@ -230,12 +196,11 @@
         <h3>Ton panier</h3>
         <button class="icon-btn" data-close-cart aria-label="Fermer">✕</button>
       </div>
-      <div class="ship-bar"><p id="shipText"></p><div class="ship-track"><span id="shipFill"></span></div></div>
       <ul class="cart-items" id="cartItems"></ul>
       <div class="drawer-foot">
-        <div class="row"><span>Sous-total</span><span id="subTotal"></span></div>
-        <div class="row"><span>Livraison</span><span id="shipCost"></span></div>
-        <div class="row total"><span>Total</span><span id="total"></span></div>
+        <div class="row"><span>Livraison</span><span>Selon ton lieu</span></div>
+        <div class="row total"><span>Total maillots</span><span id="total"></span></div>
+        <p class="ship-note">📍 Le prix de la livraison dépend de ton lieu, on te le confirme sur WhatsApp.</p>
         <input type="text" id="custName" placeholder="Ton nom" />
         <input type="text" id="custCity" placeholder="Ville / adresse de livraison" />
         <button class="btn btn-primary full" id="checkout">💬 Commander via WhatsApp</button>

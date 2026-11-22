@@ -178,7 +178,7 @@ h3 { font-size: 1.6rem; }
 .section { padding: clamp(80px, 12vw, 140px) var(--gutter); position: relative; }
 .section-head { margin-bottom: 48px; }
 
-.cat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.cat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
 .cat-card {
   position: relative; text-align: left; padding: 36px 30px 30px; min-height: 260px;
   border-radius: var(--radius); background: var(--card); border: 1px solid var(--line);
@@ -369,6 +369,7 @@ h3 { font-size: 1.6rem; }
 .cart-empty span { font-size: 3rem; display: block; margin-bottom: 10px; animation: bob 4s ease-in-out infinite; }
 .drawer-foot { padding: 20px 24px 24px; border-top: 1px solid var(--line); display: grid; gap: 10px; }
 .drawer-foot .row { display: flex; justify-content: space-between; color: var(--muted); }
+.ship-note { margin: 0 0 6px; font-size: .82rem; color: var(--muted); }
 .drawer-foot .row.total { color: var(--text); font-weight: 700; font-size: 1.2rem; margin-bottom: 6px; }
 
 /* Flying item to cart */

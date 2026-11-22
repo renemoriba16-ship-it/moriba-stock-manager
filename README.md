@@ -35,11 +35,12 @@ Site vitrine animé pour la vente de maillots, 100 % statique (HTML/CSS/JS, aucu
 
 **Fonctionnalités**
 - Hero animé : titre qui monte, maillot 3D qui suit la souris et change de modèle, compteurs, marquee
-- Catalogue avec filtres (Clubs / Sélections / Rétro), recherche et tri ; les maillots se retournent au survol
-- Fiche produit : choix de taille, quantité, flocage nom + numéro avec aperçu en direct
-- Atelier flocage interactif
-- Panier animé (sauvegardé dans le navigateur), barre « livraison offerte », gestion du stock
+- Catalogue avec filtres (Clubs / Sélections), recherche et tri ; les maillots se retournent au survol
+- Prix unique : tous les maillots à 180 000 GNF
+- Fiche produit : choix de taille et quantité
+- Panier animé (sauvegardé dans le navigateur), gestion du stock
+- Livraison selon le lieu du client, prix confirmé sur WhatsApp
 - Commande envoyée directement sur **WhatsApp** avec le récapitulatif complet
 - Responsive mobile, respecte « réduire les animations »
 
-**Personnaliser :** tout se règle dans `site/js/config.js` — nom de la boutique, numéro WhatsApp, devise, prix du flocage, livraison, et la liste des maillots (nom, prix, couleurs, motif, stock).
+**Personnaliser :** tout se règle dans `site/js/config.js` — nom de la boutique, numéro WhatsApp, e-mail, Instagram, devise, prix unique des maillots, et la liste des maillots (nom, couleurs, motif, stock).
