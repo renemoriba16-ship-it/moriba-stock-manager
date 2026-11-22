@@ -93,7 +93,7 @@ textarea{resize:vertical;min-height:58px}
 <div class="wrap">
   <header>
     <div>
-      <h1>QG <span>Moriba</span> <span class="count"><b>22</b>agents IA</span></h1>
+      <h1>QG <span>Moriba</span> <span class="count"><b id="nAgents">31</b>agents IA</span></h1>
       <p class="sub">Le quartier général de votre commerce. Chaque pôle a ses agents. Ils travaillent à leur poste, se lèvent pour se parler, passent au café et se réunissent. Quand un produit manque, toute la chaîne s'active. Faites glisser pour vous déplacer, cliquez sur un agent pour le suivre.</p>
     </div>
     <div class="controls">
@@ -166,7 +166,7 @@ textarea{resize:vertical;min-height:58px}
 (() => {
 "use strict";
 /* =================== Géométrie isométrique =================== */
-const TW = 32, TH = 16, GW = 34, GH = 22;
+const TW = 32, TH = 16, GW = 34, GH = 29;
 const P = (x, y, z = 0) => [(x - y) * TW / 2, (x + y) * TH / 2 - z];
 const cv = document.getElementById("map"), ctx = cv.getContext("2d");
 function poly(pts, fill) { ctx.beginPath(); pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath(); ctx.fillStyle = fill; ctx.fill(); }
@@ -197,6 +197,10 @@ const rooms = [
   {id:"finance", name:"Finance & Admin", x:11, y:15, w:7, h:5, color:"#6b8cff"},
   {id:"support", name:"Support client", x:20, y:15, w:6, h:5, color:"#f0557a"},
   {id:"pause", name:"Box & pause", x:28, y:15, w:5, h:5, color:"#b9a3e3", kind:"lounge"},
+  {id:"entrepot", name:"Entrepôt", x:2, y:22, w:9, h:5, color:"#a1887f", kind:"warehouse", standing:true},
+  {id:"rh", name:"Ressources humaines", x:13, y:22, w:6, h:5, color:"#3fae9f"},
+  {id:"studio", name:"Studio contenu", x:21, y:22, w:6, h:5, color:"#e0686b"},
+  {id:"it", name:"Informatique", x:29, y:22, w:4, h:5, color:"#6f7fd0"},
 ];
 const RM = Object.fromEntries(rooms.map(r => [r.id, r]));
 const roomAt = Array.from({length: GH}, () => Array(GW).fill(null));
@@ -214,6 +218,11 @@ for (const r of rooms) {
     for (let x = r.x; x < r.x + 3; x++) blocked[r.y][x] = true;
     blocked[r.y + 2][r.x + 2] = blocked[r.y + 2][r.x + 3] = true;
     blocked[r.y + r.h - 1][r.x + r.w - 1] = true;
+  } else if (r.kind === "warehouse") {
+    r.shelves = [];
+    for (let x = r.x + 1; x <= r.x + r.w - 2; x++) for (const yy of [r.y + 1, r.y + 3]) { blocked[yy][x] = true; r.shelves.push([x, yy]); }
+    for (let x = r.x + 1; x <= r.x + r.w - 2; x++) r.seats.push([x, r.y + 2, 1]);
+    blocked[r.y][r.x + r.w - 1] = true;
   } else {
     const dy = r.y + 2;
     for (let x = r.x + 1; x <= r.x + r.w - 2; x++) { blocked[dy][x] = true; r.desks.push([x, dy]); }
@@ -277,6 +286,10 @@ const roster = [
   ["emile","Émile","Responsable logistique","logistique"],["moussa","Moussa","Chauffeur-livreur","logistique"],["zoe","Zoé","Planificatrice","logistique"],
   ["diallo","Diallo","Comptable","finance"],["rokia","Rokia","Assistante admin","finance"],
   ["gaspard","Gaspard","Support client","support"],["salif","Salif","Support client","support"],
+  ["ibrahim","Ibrahim","Chef d'entrepôt","entrepot"],["nana","Nana","Préparatrice de commandes","entrepot"],["paul","Paul","Cariste","entrepot"],
+  ["aminata","Aminata","Responsable RH","rh"],["julien","Julien","Chargé de recrutement","rh"],
+  ["fanta","Fanta","Photographe produits","studio"],["malik","Malik","Monteur vidéo","studio"],
+  ["oumar","Oumar","Administrateur systèmes","it"],["sarah","Sarah","Développeuse","it"],
 ];
 const skins = ["#f1c7a5","#d9a07a","#b97a52","#8d5a3b","#6b412a","#4a2e1f"];
 const hairs = ["#1d1410","#3b2a1a","#7a3b1c","#c9a14a","#0e0a08","#5a3a2a","#2a1208"];
@@ -301,6 +314,10 @@ const workPool = {
   logistique:["planifie les tournées de demain","prépare le chargement du camion","suit une livraison à Kalaban","optimise le trajet du jeudi"],
   finance:["rapproche la caisse et les ventes","prépare la déclaration de TVA","paie un fournisseur","met à jour la trésorerie"],
   support:["répond à un client sur WhatsApp","traite un échange de produit","rappelle un client mécontent","met à jour la FAQ"],
+  entrepot:["prépare la commande d'une boutique","filme une palette de riz","range l'allée des huiles","vérifie les emplacements des cartons"],
+  rh:["prépare le planning de samedi","organise une formation caisse","répond à une demande de congé","rédige une offre de vendeur"],
+  studio:["photographie la nouvelle huile","monte la vidéo de la promo","retouche les photos du catalogue","tourne une story au comptoir"],
+  it:["sauvegarde la base de stock","répare l'imprimante de la caisse","met à jour l'appli de vente","sécurise le Wi-Fi du QG"],
 };
 const smallTalk = [
   ["Les clients demandent beaucoup de {p} en ce moment.", "Je l'ai vu aussi, je garde un œil dessus."],
@@ -355,7 +372,7 @@ function idleTasks(a) {
   if (r < 0.86) return [goto("cafe", {idle:true}), wait(7 + Math.random() * 6, "prend un thé au café", {idle:true, social:true})];
   if (r < 0.94) return [goto("pause", {idle:true}), wait(7 + Math.random() * 6, "fait une pause au box", {idle:true, social:true})];
   const other = pick(A.filter(o => o.dept !== a.dept));
-  return [talk(other.id, pick(smallTalk).map((l, i) => [i % 2, fillP(l)]), () => log(a, `est passé voir ${other.name} (${other.dept.name}).`), {idle:true})];
+  return [talk(other.id, pick(smallTalk).map((l, i) => [i % 2, fillP(l)]), () => log(a, `a rendu visite à ${other.name} (${other.dept.name}).`), {idle:true})];
 }
 function resolveTarget(a, to) {
   if (to === "seat") return [a.seat[0], a.seat[1]];
@@ -408,7 +425,7 @@ function checkStock(inv) {
       [0, `${logi.name}, ${n} × ${low.name} arrivent demain matin.`],
       [1, "Je planifie la réception et je range."],
     ], () => {
-      assign(logi, [goto("seat"), wait(5, `planifie la réception de ${low.name}`, {seat:true, show:true}), goto({room:"inventaire"}), wait(6, `range ${n} × ${low.name} en réserve`, {show:true}), run(() => {
+      assign(logi, [goto("seat"), wait(5, `planifie la réception de ${low.name}`, {seat:true, show:true}), goto({room:"entrepot"}), wait(6, `range ${n} × ${low.name} à l'entrepôt`, {show:true}), run(() => {
         low.qty += n; pending.delete(low.name);
         log(logi, `a rangé ${n} × ${low.name}. Stock : ${low.qty}.`);
         say(logi, "Livraison rangée !"); renderStock();
@@ -434,6 +451,10 @@ function endOfWork(a) {
     if (Math.random() < .5) assign(a, [talk("hawa", [[0, `Hawa, attention au ${p.name} cette semaine.`], [1, "Merci, je préviens les équipes."]])]);
   } else if (d === "support" && Math.random() < .6) log(a, `a résolu un ticket : ${pick(["un client demande où en est sa livraison","une cliente échange un sac de farine abîmé","un commerçant veut un prix de gros sur le savon","un client signale une erreur de monnaie"])}.`);
   else if (d === "marketing" && Math.random() < .4) log(a, pick(["a publié la promo du jour sur WhatsApp.","a terminé l'affiche du marché de samedi.","a répondu à 12 messages du groupe clients."]));
+  else if (d === "entrepot" && Math.random() < .4) log(a, pick(["a préparé 3 commandes pour les boutiques du quartier.","a réorganisé l'allée des huiles.","a chargé une palette pour la livraison de demain."]));
+  else if (d === "rh" && Math.random() < .35) log(a, pick(["a publié une offre pour un vendeur du samedi.","a validé le planning de la semaine.","a organisé une formation à la caisse."]));
+  else if (d === "studio" && Math.random() < .4) { log(a, pick(["a livré les photos du catalogue.","a terminé la vidéo de la promo.","a tourné une story au comptoir."])); if (Math.random() < .5) assign(a, [talk(pickFree("marketing").id, [[0, "Les visuels de la promo sont prêts."], [1, "Super, je les publie cet après-midi !"]])]); }
+  else if (d === "it" && Math.random() < .35) log(a, pick(["a sauvegardé la base de stock.","a réparé l'imprimante de la caisse.","a mis à jour l'appli de vente."]));
   else if (a.id === "hawa" && Math.random() < .7) meeting(a);
 }
 function meeting(hawa) {
@@ -460,6 +481,10 @@ const routes = [
   [/livr|camion|transport|tournée|réception/i, "logistique"],
   [/prévi|analy|tendance|prédi|donnée|courbe/i, "data"],
   [/client|support|plainte|réclam|ticket|faq/i, "support"],
+  [/photo|vidéo|video|tournage|visuel|story/i, "studio"],
+  [/recrut|congé|salari|formation|planning|embauche/i, "rh"],
+  [/ordinateur|informatique|bug|wi-?fi|logiciel|appli|site|imprimante|sauvegarde/i, "it"],
+  [/palette|cariste|préparation|colis|rayon/i, "entrepot"],
 ];
 function mission(text, who) {
   text = text.trim(); if (!text) return;
@@ -526,7 +551,7 @@ function updateAgent(a, dt) {
     p.pop(); a.path = p;
   } else if (c.type === "do") { c.fn(); a.cur = null; }
 }
-const isSitting = a => !a.path.length && a.cur && a.cur.type === "wait" && ((a.cur.meeting && roomAt[a.ty][a.tx] === RM.reunion) || (a.cur.seat && a.tx === a.seat[0] && a.ty === a.seat[1]));
+const isSitting = a => !a.path.length && a.cur && a.cur.type === "wait" && ((a.cur.meeting && roomAt[a.ty][a.tx] === RM.reunion) || (a.cur.seat && !a.dept.standing && a.tx === a.seat[0] && a.ty === a.seat[1]));
 const atPost = a => !a.path.length && a.tx === a.seat[0] && a.ty === a.seat[1] && !!a.cur && !!a.cur.seat;
 
 /* =================== Décor statique =================== */
@@ -581,6 +606,24 @@ for (const r of rooms) {
         ["#ffd166", "#ff8fab", "#8ee3c8", "#9db4ff"].forEach((c, i) => { const z = 9 + (i % 2) * 4; poly([P(r.x + .45 + i * .3, r.y + .18, z), P(r.x + .62 + i * .3, r.y + .18, z), P(r.x + .62 + i * .3, r.y + .18, z + 3), P(r.x + .45 + i * .3, r.y + .18, z + 3)], c); });
       });
     }
+  } else if (r.kind === "warehouse") {
+    const crate = ["#d9a066", "#c98a4b", "#e8c07a", "#b9824a"];
+    for (const [x, y] of r.shelves) add(x + y + 1, () => {
+      box(x + .08, y + .2, .84, .6, 0, 26, "#8d99ae", "#6c7891", "#5b6680");
+      for (const z of [1, 10, 19]) {
+        box(x + .08, y + .2, .84, .6, z + 6, 1.4, "#c7cfdd", "#9aa6bd", "#8792ab");
+        const c = crate[(x * 3 + y + z) % 4];
+        box(x + .2, y + .3, .32, .42, z, 6, shade(c, 1.15), c, shade(c, .82));
+        if ((x + z) % 3) box(x + .56, y + .3, .3, .42, z, 5, shade(crate[(x + z) % 4], 1.15), crate[(x + z) % 4], shade(crate[(x + z) % 4], .82));
+      }
+    });
+    const px = r.x + r.w - 1, py = r.y;
+    add(px + py + 1, () => {
+      box(px + .1, py + .1, .8, .8, 0, 2, "#c9a26b", "#a9844f", "#8f6d3e");
+      box(px + .18, py + .18, .64, .64, 2, 8, "#e8c07a", "#d9a066", "#b9824a");
+      box(px + .25, py + .25, .5, .5, 10, 6, "#d9a066", "#c98a4b", "#a8743d");
+    });
+    add(r.x + r.y + .6, () => { box(r.x + .2, r.y + .1, 1.4, .08, 4, 9, "#ffd166", "#f2b84b", "#d99a2b"); ctx.font = "700 4px 'Atkinson Hyperlegible', sans-serif"; ctx.fillStyle = "#2d2552"; ctx.save(); const [tx, ty] = P(r.x + .35, r.y + .18, 6.5); ctx.translate(tx, ty); ctx.transform(1, .5, 0, 1, 0, 0); ctx.textAlign = "left"; ctx.textBaseline = "alphabetic"; ctx.fillText("ALLÉE A · B", 0, 0); ctx.restore(); });
   } else if (r.kind === "open") {
     for (let x = r.x; x < r.x + 4; x++) add(x + r.y + 1, () => {
       box(x, r.y + .1, 1, .8, 0, 10, "#e9d3b5", "#9b6a43", "#86592f");
@@ -681,6 +724,7 @@ function drawIsland() {
     let c;
     if (!r) c = (x + y) % 2 ? "#f1e4c9" : "#eadbbd";
     else if (r.kind === "open") c = (x + y) % 2 ? "#f4ead8" : "#e3d2b4";
+    else if (r.kind === "warehouse") c = (x + y) % 2 ? "#dcd8d0" : "#d2cdc3";
     else c = (x + y) % 2 ? shade(r.color, 1.62) : shade(r.color, 1.52);
     tile(x, y, c);
   }
@@ -913,7 +957,8 @@ function frame(now) {
 }
 function boot() {
   layout(); renderStock(); select(AM.ada);
-  log(null, "Le QG ouvre ses portes. Les 22 agents s'installent à leur poste.");
+  document.getElementById("nAgents").textContent = A.length;
+  log(null, `Le QG ouvre ses portes. Les ${A.length} agents s'installent à leur poste.`);
   say(AM.hawa, "Bonjour à tous, belle semaine !");
   for (const a of A) a.queue.push(wait(1 + Math.random() * 4, pick(workPool[a.dept.id]), {seat:true, work:true, idle:true}));
   assign(AM.ada, [wait(4, "fait le premier inventaire du jour", {seat:true, show:true}), run(() => checkStock(AM.ada))]);
