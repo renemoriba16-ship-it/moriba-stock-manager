@@ -15,24 +15,43 @@ window.SHOP = {
 
 /* ---------------------------------------------------------
    CATALOGUE
-   pattern : "plain" | "stripes" | "hoops" | "sash" | "halves" | "chevron"
-   colors  : [couleur principale, couleur secondaire, couleur du texte]
-   category: "club" | "selection"
-   stock   : nombre d'unités disponibles (0 = rupture)
-   photo     : (optionnel) photo de face, ex : "images/p01.jpg"
-   photoBack : (optionnel) photo de dos,  ex : "images/p01-dos.jpg"
-               → sans photo, le maillot est dessiné automatiquement avec les couleurs
-   (le prix est le même pour tous : voir "price" plus haut)
+   name      : nom affiché
+   category  : "club" | "selection"
+   photo     : photo de face (dans le dossier images/)
+   photoBack : (optionnel) photo de dos — le maillot se retourne au survol
+   fit       : "cover" pour les photos sur fond gris / photos portées
+   status    : "commande" (par défaut) | "stock" | "bientot"
+               - commande : vendu sur commande, quantité libre
+               - stock    : en stock, préciser stock: 5 (0 = rupture)
+               - bientot  : visible mais pas encore commandable
+   colors    : couleurs du maillot (lueur autour de la photo)
+   Le prix est le même pour tous : voir "price" plus haut.
    --------------------------------------------------------- */
 window.PRODUCTS = [
-  { id: "p01", name: "Maillot Domicile Royal",    category: "club",      season: "25/26", pattern: "stripes", colors: ["#0b1f6b", "#d11f2f", "#ffffff"], stock: 12, badge: "Best-seller" },
-  { id: "p02", name: "Maillot Extérieur Ivoire",  category: "club",      season: "25/26", pattern: "plain",   colors: ["#f4efe3", "#1b1b1b", "#1b1b1b"], stock: 8 },
-  { id: "p03", name: "Maillot Third Néon",        category: "club",      season: "25/26", pattern: "chevron", colors: ["#111111", "#c6ff00", "#c6ff00"], stock: 5, badge: "Nouveau" },
-  { id: "p04", name: "Sélection Lions Verts",     category: "selection", season: "2026",  pattern: "sash",    colors: ["#0f8a3c", "#ffd200", "#ffffff"], stock: 15, badge: "Coupe 2026" },
-  { id: "p05", name: "Sélection Éléphants",       category: "selection", season: "2026",  pattern: "halves",  colors: ["#ff7a00", "#ffffff", "#0f5132"], stock: 10 },
-  { id: "p06", name: "Sélection Aigles",          category: "selection", season: "2026",  pattern: "hoops",   colors: ["#d11f2f", "#ffd200", "#ffffff"], stock: 0 },
-  { id: "p10", name: "Maillot Gardien Magma",     category: "club",      season: "25/26", pattern: "chevron", colors: ["#ff3d00", "#2b0a00", "#ffffff"], stock: 7 },
-  { id: "p11", name: "Sélection Étoile Noire",    category: "selection", season: "2026",  pattern: "sash",    colors: ["#111111", "#c8a24a", "#c8a24a"], stock: 9 },
+  // ---- Sélections ----
+  { id: "fra-dom", name: "France Domicile",       category: "selection", photo: "images/france-domicile.webp",      colors: ["#1b2a8f", "#ffffff"] },
+  { id: "fra-ext", name: "France Extérieur",      category: "selection", photo: "images/france-exterieur.webp",     colors: ["#bfe6d6", "#c0392b"] },
+  { id: "bra-dom", name: "Brésil Domicile",       category: "selection", photo: "images/bresil-domicile.webp",    photoBack: "images/bresil-domicile-dos.webp",    fit: "cover", colors: ["#f5d90a", "#0b6b4a"] },
+  { id: "bra-ext", name: "Brésil Extérieur",      category: "selection", photo: "images/bresil-exterieur.webp",   photoBack: "images/bresil-exterieur-dos.webp",   fit: "cover", colors: ["#1b3aa8", "#0b1640"] },
+  { id: "por-dom", name: "Portugal Domicile",     category: "selection", photo: "images/portugal-domicile.webp",  photoBack: "images/portugal-domicile-dos.webp",  fit: "cover", colors: ["#c8102e", "#1e8f8f"] },
+  { id: "por-ext", name: "Portugal Extérieur",    category: "selection", photo: "images/portugal-exterieur.webp", photoBack: "images/portugal-exterieur-dos.webp", fit: "cover", colors: ["#3fc1b5", "#ffffff"] },
+  { id: "ang-dom", name: "Angleterre Domicile",   category: "selection", photo: "images/angleterre-domicile.webp",  colors: ["#f2f2f2", "#1b2240"] },
+  { id: "ang-ext", name: "Angleterre Extérieur",  category: "selection", photo: "images/angleterre-exterieur.webp", colors: ["#e3202b", "#1b2240"] },
+  { id: "bel-dom", name: "Belgique Domicile",     category: "selection", photo: "images/belgique-domicile.webp",    colors: ["#d10f0f", "#f2c200"] },
+  // ---- Clubs ----
+  { id: "psg-dom", name: "PSG Domicile",              category: "club", photo: "images/psg-domicile.webp",               colors: ["#1f4fd1", "#e3202b"] },
+  { id: "psg-ext", name: "PSG Extérieur",             category: "club", photo: "images/psg-exterieur.webp", fit: "cover", colors: ["#f2f2f2", "#c8102e"] },
+  { id: "bar-dom", name: "FC Barcelone Domicile",     category: "club", photo: "images/barcelone-domicile.webp",         colors: ["#a50044", "#004d98"] },
+  { id: "rma-3rd", name: "Real Madrid Third",         category: "club", photo: "images/real-madrid-third.webp",          colors: ["#1f4a45", "#e8dfc8"] },
+  { id: "mun-dom", name: "Manchester United Domicile", category: "club", photo: "images/manchester-united-domicile.webp", colors: ["#c70101", "#ffffff"] },
+  { id: "che-dom", name: "Chelsea Domicile",          category: "club", photo: "images/chelsea-domicile.webp",           colors: ["#1438b8", "#e9b51e"] },
+  { id: "bay-dom", name: "Bayern Munich Domicile",    category: "club", photo: "images/bayern-domicile.webp",            colors: ["#dc052d", "#ffffff"] },
+  { id: "juv-3rd", name: "Juventus Third",            category: "club", photo: "images/juventus-third.webp", fit: "cover", status: "bientot", colors: ["#f4a6c6", "#111111"] },
 ];
 
-window.PRODUCTS.forEach((p) => { if (p.price === undefined) p.price = window.SHOP.price; });
+window.PRODUCTS.forEach((p) => {
+  if (p.price === undefined) p.price = window.SHOP.price;
+  if (!p.status) p.status = "commande";
+  if (!p.pattern) p.pattern = "plain";
+  if (p.colors.length < 3) p.colors = [p.colors[0], p.colors[1], p.colors[1]];
+});

@@ -99,6 +99,9 @@
     return { el: t, b: t.querySelector(".roll-ball") };
   });
 
+  /* ---------- Bannière en parallaxe ---------- */
+  const banners = [...document.querySelectorAll(".banner")].map((b) => ({ el: b, img: b.querySelector(".banner-img") }));
+
   /* ---------- Titres qui glissent ---------- */
   const heads = [...document.querySelectorAll(".section-head h2")];
 
@@ -137,6 +140,14 @@
       const size = t.b.offsetWidth;
       const x = k * (r.width - size);
       t.b.style.transform = `translate3d(${x}px, 0, 0) rotate(${(x / (size / 2)) * (180 / Math.PI)}deg)`;
+    });
+
+    // Bannière : l'image défile plus lentement que la page et zoome légèrement
+    banners.forEach((b) => {
+      const r = b.el.getBoundingClientRect();
+      if (r.bottom < 0 || r.top > H) return;
+      const k = (r.top + r.height / 2 - H / 2) / H;
+      b.img.style.transform = `translate3d(0, ${k * -60}px, 0) scale(${1.05 + Math.abs(k) * 0.08})`;
     });
 
     // Titres : glissent depuis la gauche puis se figent

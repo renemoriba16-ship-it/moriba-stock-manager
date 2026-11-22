@@ -14,14 +14,17 @@
     return S.currencyAfter ? `${v} ${S.currency}` : `${S.currency}${v}`;
   };
   const byId = (id) => P.find((p) => p.id === id);
+  const isOut = (p) => p.status === "bientot" || (p.status === "stock" && p.stock <= 0);
+  const limitOf = (p) => (p.status === "stock" ? p.stock : 99);
+  const metaOf = (p) => [CAT_LABEL[p.category], p.season].filter(Boolean).join(" • ");
 
   /* Photo réelle si fournie dans config.js (photo / photoBack), sinon maillot dessiné */
-  const img = (src, alt) => `<img class="jersey-photo" src="${escapeXML(src)}" alt="${escapeXML(alt)}" loading="lazy" />`;
+  const img = (src, alt, fit) => `<img class="jersey-photo${fit === "cover" ? " cover" : ""}" src="${escapeXML(src)}" alt="${escapeXML(alt)}" loading="lazy" />`;
   const hasBack = (p) => !p.photo || !!p.photoBack;
   function face(p, side = "front", opts = {}) {
-    if (side === "front" && p.photo) return img(p.photo, p.name);
-    if (side === "back" && p.photoBack) return img(p.photoBack, p.name + " (dos)");
-    if (side === "back" && p.photo) return img(p.photo, p.name);
+    if (side === "front" && p.photo) return img(p.photo, p.name, p.fit);
+    if (side === "back" && p.photoBack) return img(p.photoBack, p.name + " (dos)", p.fit);
+    if (side === "back" && p.photo) return img(p.photo, p.name, p.fit);
     return jerseySVG(p, side === "back" ? { side: "back", name: S.backName || S.name, number: 10, ...opts } : opts);
   }
 
@@ -114,7 +117,8 @@
 
   /* ---------------- Hero jersey carousel + parallax ---------------- */
   const heroStage = $("#heroJersey");
-  const heroPicks = P.filter((p) => p.stock > 0).slice(0, 6);
+  const heroPicks = P.filter((p) => !isOut(p) && p.fit !== "cover").slice(0, 6);
+  if (!heroPicks.length) heroPicks.push(P[0]);
   let heroIdx = 0;
   heroStage.innerHTML = face(heroPicks[0], "front", { number: 10 });
   if (!reduceMotion) {
@@ -137,6 +141,12 @@
   }
 
   /* ---------------- Category shortcuts ---------------- */
+  $$("[data-goto-search]").forEach((b) => b.addEventListener("click", () => {
+    setFilter("all");
+    $("#search").value = b.dataset.gotoSearch;
+    state.q = b.dataset.gotoSearch.toLowerCase();
+    renderProducts();
+  }));
   $$("[data-goto]").forEach((b) => b.addEventListener("click", () => {
     setFilter(b.dataset.goto);
     $("#catalogue").scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth" });
@@ -148,17 +158,17 @@
 
   function renderProducts() {
     let list = P.filter((p) => (state.filter === "all" || p.category === state.filter) &&
-      (p.name + " " + p.season + " " + CAT_LABEL[p.category]).toLowerCase().includes(state.q));
+      (p.name + " " + (p.season || "") + " " + CAT_LABEL[p.category]).toLowerCase().includes(state.q));
     if (state.sort === "price-asc") list = [...list].sort((a, b) => a.price - b.price);
     if (state.sort === "price-desc") list = [...list].sort((a, b) => b.price - a.price);
     if (state.sort === "name") list = [...list].sort((a, b) => a.name.localeCompare(b.name, "fr"));
     $("#empty").hidden = list.length > 0;
     grid.innerHTML = list.map((p, i) => {
-      const out = p.stock <= 0;
+      const out = isOut(p);
       return `
       <article class="product" style="--i:${i}" data-id="${p.id}" tabindex="0" aria-label="${escapeXML(p.name)}">
-        ${out ? `<span class="badge out">Rupture</span>` : p.badge ? `<span class="badge">${escapeXML(p.badge)}</span>` : ""}
-        <div class="product-media" style="--glow:${p.colors[0]}55">
+        ${p.status === "bientot" ? `<span class="badge soon">Bientôt disponible</span>` : out ? `<span class="badge out">Rupture</span>` : p.badge ? `<span class="badge">${escapeXML(p.badge)}</span>` : ""}
+        <div class="product-media${p.photo ? (p.fit === "cover" ? " photo-cover" : " photo-light") : ""}" style="--glow:${p.colors[0]}55">
           <div class="flip${hasBack(p) ? "" : " no-flip"}${p.photo ? " has-photo" : ""}"><div class="flip-inner">
             <div class="flip-face front">${face(p)}</div>
             <div class="flip-face back">${face(p, "back")}</div>
@@ -166,10 +176,10 @@
           ${out ? "" : `<button class="quick-add" data-quick="${p.id}" aria-label="Ajout rapide ${escapeXML(p.name)}">+</button>`}
         </div>
         <div class="product-info">
-          <span class="meta">${CAT_LABEL[p.category]} • ${p.season}</span>
+          <span class="meta">${metaOf(p)}</span>
           <h3>${escapeXML(p.name)}</h3>
           <div class="price">${money(p.price)} ${p.oldPrice ? `<s>${money(p.oldPrice)}</s>` : ""}</div>
-          ${!out && p.stock <= 5 ? `<div class="stock-low">Plus que ${p.stock} en stock</div>` : ""}
+          ${p.status === "commande" ? `<div class="on-order">Sur commande</div>` : p.status === "stock" && !out && p.stock <= 5 ? `<div class="stock-low">Plus que ${p.stock} en stock</div>` : ""}
         </div>
       </article>`;
     }).join("");
@@ -210,18 +220,23 @@
     lastFocus = document.activeElement;
     Object.assign(m, { id, size: null, qty: 1 });
     $(".modal-visual").style.setProperty("--glow", p.colors[0] + "77");
-    $("#mCat").textContent = `${CAT_LABEL[p.category]} • ${p.season}`;
+    $("#mCat").textContent = metaOf(p);
     $("#mTitle").textContent = p.name;
     $("#mPrice").innerHTML = `${money(p.price)}${p.oldPrice ? `<s>${money(p.oldPrice)}</s>` : ""}`;
     const stock = $("#mStock");
-    stock.textContent = p.stock <= 0 ? "Rupture de stock — contacte-nous pour une précommande" : p.stock <= 5 ? `Plus que ${p.stock} en stock, fais vite !` : "En stock — expédié sous 48h";
-    stock.classList.toggle("low", p.stock <= 5);
+    const low = p.status === "stock" && p.stock <= 5;
+    stock.textContent =
+      p.status === "bientot" ? "Bientôt disponible — écris-nous sur WhatsApp pour être prévenu" :
+      p.status === "commande" ? "Sur commande — on te confirme le délai sur WhatsApp" :
+      p.stock <= 0 ? "Rupture de stock — contacte-nous sur WhatsApp" :
+      low ? `Plus que ${p.stock} en stock, fais vite !` : "En stock";
+    stock.classList.toggle("low", low || p.status === "bientot");
     $("#mSizes").innerHTML = SIZES.map((s) => `<button type="button" data-size="${s}">${s}</button>`).join("");
     $("#mQty").textContent = "1";
     $("#mFlip").classList.remove("turned");
     $("#mTurn").textContent = "↻ Voir le dos";
-    $("#mAdd").disabled = p.stock <= 0;
-    $("#mAdd").textContent = p.stock <= 0 ? "Indisponible" : "Ajouter au panier";
+    $("#mAdd").disabled = isOut(p);
+    $("#mAdd").textContent = p.status === "bientot" ? "Bientôt disponible" : isOut(p) ? "Indisponible" : "Ajouter au panier";
     renderModalJersey();
     modal.classList.add("open");
     modal.setAttribute("aria-hidden", "false");
@@ -254,7 +269,7 @@
     $("#mTurn").textContent = f.classList.contains("turned") ? "↻ Voir la face" : "↻ Voir le dos";
   });
   $("#mMinus").addEventListener("click", () => { m.qty = Math.max(1, m.qty - 1); $("#mQty").textContent = m.qty; });
-  $("#mPlus").addEventListener("click", () => { m.qty = Math.min(byId(m.id).stock || 1, m.qty + 1); $("#mQty").textContent = m.qty; });
+  $("#mPlus").addEventListener("click", () => { m.qty = Math.min(limitOf(byId(m.id)) || 1, m.qty + 1); $("#mQty").textContent = m.qty; });
   $("#mAdd").addEventListener("click", () => {
     if (!m.size) {
       toast("Choisis ta taille 👕");
@@ -269,7 +284,7 @@
   const KEY = "moriba-cart";
   let cart = [];
   try { cart = JSON.parse(localStorage.getItem(KEY)) || []; } catch (_) { cart = []; }
-  cart = cart.filter((it) => byId(it.id)).map(({ id, size, qty }) => ({ id, size, qty }));
+  cart = cart.filter((it) => byId(it.id) && !isOut(byId(it.id))).map(({ id, size, qty }) => ({ id, size, qty }));
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(cart)); } catch (_) {} };
   const keyOf = (it) => it.id + "|" + it.size;
   const unitPrice = (it) => byId(it.id).price;
@@ -279,7 +294,8 @@
     const k = keyOf(item);
     const existing = cart.find((c) => keyOf(c) === k);
     const inCart = cart.filter((c) => c.id === item.id).reduce((s, c) => s + c.qty, 0);
-    if (inCart + item.qty > p.stock) { toast(`Stock insuffisant (${p.stock} dispo)`); return; }
+    if (isOut(p)) return;
+    if (inCart + item.qty > limitOf(p)) { toast(`Quantité max atteinte (${limitOf(p)})`); return; }
     if (existing) existing.qty += item.qty; else cart.push({ ...item });
     save();
     header.classList.remove("hidden");
@@ -345,7 +361,7 @@
     const act = b.dataset.act;
     if (act === "plus") {
       const p = byId(it.id), inCart = cart.filter((c) => c.id === it.id).reduce((s, c) => s + c.qty, 0);
-      if (inCart >= p.stock) { toast(`Stock max atteint (${p.stock})`); return; }
+      if (inCart >= limitOf(p)) { toast(`Quantité max atteinte (${limitOf(p)})`); return; }
       it.qty++;
     }
     if (act === "minus") it.qty--;
