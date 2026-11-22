@@ -34,11 +34,16 @@ Site vitrine animé pour la vente de maillots, 100 % statique (HTML/CSS/JS, aucu
 **Lancer :** ouvre `site/index.html` dans ton navigateur, ou héberge le dossier `site/` (Netlify, GitHub Pages…).
 
 **Fonctionnalités**
-- Hero animé : titre qui monte, maillot 3D qui suit la souris et change de modèle, compteurs, marquee
+- Hero animé : titre qui monte, maillot 3D (sur ordinateur uniquement, chargé après le reste), compteurs, marquee
 - Catalogue avec filtres (Clubs / Sélections), recherche et tri ; les maillots se retournent au survol
 - Prix unique : tous les maillots à 180 000 GNF
 - Fiche produit : choix de taille et quantité
-- Panier animé (sauvegardé dans le navigateur), gestion du stock
+- Panier animé (sauvegardé dans le navigateur), gestion du stock ; la taille est toujours demandée
+- Guide des tailles, bloc « Qui sommes-nous » et conditions de vente
+- Lien direct vers chaque maillot (`#maillot-<id>`) et bouton « Partager ce maillot »
+- Aperçu de partage (Open Graph, `site/og-image.jpg`), robots.txt, sitemap.xml, page 404 en français
+- En-têtes de sécurité dans `site/_headers` (si tu ajoutes un script intégré à la page, mets à jour l'empreinte sha256 de la règle Content-Security-Policy)
+- Polices hébergées avec le site (`site/fonts/`, licence OFL)
 - Livraison selon le lieu du client, prix confirmé sur WhatsApp
 - Commande envoyée directement sur **WhatsApp** avec le récapitulatif complet
 - Responsive mobile, respecte « réduire les animations »

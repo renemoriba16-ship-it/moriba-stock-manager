@@ -174,7 +174,7 @@
             <div class="flip-face front">${face(p)}</div>
             <div class="flip-face back">${face(p, "back")}</div>
           </div></div>
-          ${out ? "" : `<button class="quick-add" data-quick="${p.id}" aria-label="Ajout rapide ${escapeXML(p.name)}">+</button>`}
+          ${out ? "" : `<button class="quick-add" data-quick="${p.id}" aria-label="Choisir la taille : ${escapeXML(p.name)}">+</button>`}
         </div>
         <div class="product-info">
           <span class="meta">${metaOf(p)}</span>
@@ -199,7 +199,7 @@
     const quick = e.target.closest("[data-quick]");
     if (quick) {
       e.stopPropagation();
-      addToCart({ id: quick.dataset.quick, size: "M", qty: 1 }, quick.closest(".product").querySelector(".flip-face.front > *"));
+      openModal(quick.dataset.quick); // la taille est toujours demandée
       return;
     }
     const card = e.target.closest(".product");
@@ -243,8 +243,21 @@
     modal.setAttribute("aria-hidden", "false");
     document.body.classList.add("locked");
     setTimeout(() => $(".modal-close").focus(), 50);
+    try { history.replaceState(null, "", "#maillot-" + id); } catch (_) {}
   }
   window.openProduct = openModal;
+  const productLink = (id) => location.href.split("#")[0] + "#maillot-" + id;
+  $("#mShare").addEventListener("click", async () => {
+    const p = byId(m.id), url = productLink(m.id);
+    const text = `${p.name} — ${money(p.price)} chez ${S.name}`;
+    try {
+      if (navigator.share) { await navigator.share({ title: p.name, text, url }); return; }
+      await navigator.clipboard.writeText(url);
+      toast("Lien du maillot copié ✓");
+    } catch (_) {
+      window.open(`https://wa.me/?text=${encodeURIComponent(text + " " + url)}`, "_blank", "noopener");
+    }
+  });
   function renderModalJersey() {
     const p = byId(m.id);
     $("#mFront").innerHTML = face(p);
@@ -253,6 +266,8 @@
     $("#mFlip").classList.toggle("has-photo", !!p.photo);
   }
   function closeModal() {
+    if (!modal.classList.contains("open")) return;
+    try { if (location.hash.startsWith("#maillot-")) history.replaceState(null, "", location.pathname + location.search); } catch (_) {}
     modal.classList.remove("open");
     modal.setAttribute("aria-hidden", "true");
     document.body.classList.remove("locked");
@@ -408,6 +423,17 @@
   });
 
   renderCart();
+
+  /* ---------------- Liens directs ---------------- */
+  function openFromHash() {
+    const mm = location.hash.match(/^#maillot-([\w-]+)$/);
+    if (mm && byId(mm[1])) openModal(mm[1]);
+  }
+  openFromHash();
+  addEventListener("hashchange", openFromHash);
+  $$("[data-open-conditions]").forEach((a) => a.addEventListener("click", () => { const c = $("#conditions"); if (c) c.open = true; }));
+  const wa = $("[data-wa-number]");
+  if (wa) { wa.href = `https://wa.me/${S.whatsapp}`; wa.textContent = "+" + S.whatsapp.replace(/^(\d{3})(\d{3})(\d{2})(\d{2})(\d{2})$/, "$1 $2 $3 $4 $5"); wa.target = "_blank"; wa.rel = "noopener"; }
 
   /* ---------------- Toast ---------------- */
   let toastT;

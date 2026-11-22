@@ -5,12 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>SENSEY’S JERSEYS — Boutique de maillots</title>
   <meta name="description" content="Maillots de foot clubs et sélections à 180 000 GNF. Commande sur WhatsApp, livraison partout." />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="canonical" href="https://senseys-jerseys.netlify.app/" />
+  <meta name="theme-color" content="#0a0a0c" />
+  <!-- Aperçu quand le lien est partagé (WhatsApp, Instagram, Facebook…) -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="SENSEY’S JERSEYS" />
+  <meta property="og:locale" content="fr_FR" />
+  <meta property="og:title" content="SENSEY’S JERSEYS — Maillots de foot à 180 000 GNF" />
+  <meta property="og:description" content="Clubs et sélections, sur commande. Commande sur WhatsApp, livraison partout." />
+  <meta property="og:url" content="https://senseys-jerseys.netlify.app/" />
+  <meta property="og:image" content="https://senseys-jerseys.netlify.app/og-image.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="SENSEY’S JERSEYS — maillots de foot à 180 000 GNF" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="https://senseys-jerseys.netlify.app/og-image.jpg" />
+  <link rel="preload" href="fonts/anton-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="fonts/inter-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="css/style.css" />
-  <link rel="modulepreload" href="vendor/three/three.module.min.js" />
-  <link rel="preload" href="models/maillot.glb" as="fetch" crossorigin />
   <script type="importmap">
     { "imports": { "three": "./vendor/three/three.module.min.js", "three/addons/": "./vendor/three/addons/" } }
   </script>
@@ -24,7 +36,8 @@
     <a href="#top" class="logo" data-shop-name>SENSEY’S JERSEYS</a>
     <nav class="nav" id="nav">
       <a href="#catalogue">Catalogue</a>
-      <a href="#avis">Avis</a>
+      <a href="#tailles">Tailles</a>
+      <a href="#apropos">Qui sommes-nous</a>
       <a href="#faq">FAQ</a>
       <a href="#contact">Contact</a>
     </nav>
@@ -72,8 +85,8 @@
   <!-- ============ MARQUEE ============ -->
   <div class="marquee" aria-hidden="true">
     <div class="marquee-track">
-      <span>LIVRAISON PARTOUT</span><i>✦</i><span>TOUS LES MAILLOTS À 180 000 GNF</span><i>✦</i><span>QUALITÉ PREMIUM</span><i>✦</i><span>PAIEMENT SÉCURISÉ</span><i>✦</i><span>ÉCHANGE 14 JOURS</span><i>✦</i>
-      <span>LIVRAISON PARTOUT</span><i>✦</i><span>TOUS LES MAILLOTS À 180 000 GNF</span><i>✦</i><span>QUALITÉ PREMIUM</span><i>✦</i><span>PAIEMENT SÉCURISÉ</span><i>✦</i><span>ÉCHANGE 14 JOURS</span><i>✦</i>
+      <span>LIVRAISON PARTOUT</span><i>✦</i><span>TOUS LES MAILLOTS À 180 000 GNF</span><i>✦</i><span>COMMANDE SUR WHATSAPP</span><i>✦</i><span>MOBILE MONEY OU ESPÈCES À LA LIVRAISON</span><i>✦</i><span>250+ MAILLOTS VENDUS</span><i>✦</i>
+      <span>LIVRAISON PARTOUT</span><i>✦</i><span>TOUS LES MAILLOTS À 180 000 GNF</span><i>✦</i><span>COMMANDE SUR WHATSAPP</span><i>✦</i><span>MOBILE MONEY OU ESPÈCES À LA LIVRAISON</span><i>✦</i><span>250+ MAILLOTS VENDUS</span><i>✦</i>
     </div>
   </div>
 
@@ -114,7 +127,7 @@
         <button class="chip" data-filter="selection">Sélections</button>
               </div>
       <div class="toolbar-right">
-        <input type="search" id="search" placeholder="Rechercher un maillot…" aria-label="Rechercher" />
+        <input type="search" id="search" placeholder="Rechercher un maillot…" aria-label="Rechercher un maillot" />
         <select id="sort" aria-label="Trier">
           <option value="default">Pertinence</option>
           <option value="price-asc">Prix croissant</option>
@@ -131,23 +144,68 @@
 
   <!-- ============ AVANTAGES ============ -->
   <section class="section perks">
-    <div class="perk reveal"><span class="perk-ico">🚚</span><h3>Livraison rapide</h3><p>Partout, tarif selon ton lieu.</p></div>
-    <div class="perk reveal"><span class="perk-ico">🧵</span><h3>Qualité premium</h3><p>Tissu respirant, coutures renforcées.</p></div>
-    <div class="perk reveal"><span class="perk-ico">🔁</span><h3>Échange facile</h3><p>Taille pas bonne ? Échange sous 14 jours.</p></div>
+    <div class="perk reveal"><span class="perk-ico">🚚</span><h3>Livraison partout</h3><p>Tarif selon ton lieu, confirmé sur WhatsApp.</p></div>
+    <div class="perk reveal"><span class="perk-ico">📏</span><h3>Guide des tailles</h3><p>Mesures de M à XXL pour choisir sans te tromper.</p></div>
+    <div class="perk reveal"><span class="perk-ico">💵</span><h3>Paiement simple</h3><p>Mobile money ou espèces à la livraison.</p></div>
     <div class="perk reveal"><span class="perk-ico">💬</span><h3>Commande WhatsApp</h3><p>Une question ? On répond en direct.</p></div>
   </section>
 
-  <!-- ============ AVIS ============ -->
-  <section class="section" id="avis">
+  <!-- ============ GUIDE DES TAILLES ============ -->
+  <section class="section sizes-guide" id="tailles">
     <div class="section-head reveal">
-      <p class="eyebrow">Ils en parlent</p>
-      <h2>Avis clients</h2>
+      <p class="eyebrow">Guide des tailles</p>
+      <h2>Trouve ta taille</h2>
     </div>
-    <div class="reviews" id="reviews">
-      <figure class="review reveal"><div class="stars">★★★★★</div><blockquote>Qualité au top, tissu agréable. Reçu en 2 jours !</blockquote><figcaption>Amadou K.</figcaption></figure>
-      <figure class="review reveal"><div class="stars">★★★★★</div><blockquote>Le maillot de la sélection est magnifique, exactement comme sur les photos.</blockquote><figcaption>Sarah M.</figcaption></figure>
-      <figure class="review reveal"><div class="stars">★★★★★</div><blockquote>Commande par WhatsApp super simple, vendeur très réactif.</blockquote><figcaption>Yannick D.</figcaption></figure>
-      <figure class="review reveal"><div class="stars">★★★★☆</div><blockquote>Taillent un peu petit, prenez une taille au-dessus. Sinon parfait.</blockquote><figcaption>Fatou S.</figcaption></figure>
+    <div class="size-wrap reveal">
+      <table class="size-table">
+        <caption>Mesures du maillot posé à plat, en centimètres (indicatives, ± 2 cm).</caption>
+        <thead><tr><th scope="col">Taille</th><th scope="col">Largeur poitrine</th><th scope="col">Longueur</th><th scope="col">Tour de poitrine conseillé</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">M</th><td>52</td><td>71</td><td>94 – 100</td></tr>
+          <tr><th scope="row">L</th><td>55</td><td>73</td><td>100 – 106</td></tr>
+          <tr><th scope="row">XL</th><td>58</td><td>75</td><td>106 – 112</td></tr>
+          <tr><th scope="row">XXL</th><td>61</td><td>77</td><td>112 – 118</td></tr>
+        </tbody>
+      </table>
+      <div class="size-tips">
+        <h3>Comment mesurer ?</h3>
+        <ul>
+          <li><b>Largeur poitrine :</b> d'une aisselle à l'autre, maillot à plat.</li>
+          <li><b>Longueur :</b> du haut de l'épaule jusqu'en bas du maillot.</li>
+          <li>Le plus simple : mesure un t-shirt que tu aimes et compare.</li>
+          <li>Entre deux tailles ou si tu aimes porter large : prends la taille au-dessus.</li>
+        </ul>
+        <p>Un doute ? Envoie-nous tes mesures sur WhatsApp, on te conseille.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ QUI SOMMES-NOUS ============ -->
+  <section class="section about" id="apropos">
+    <div class="about-grid">
+      <div class="reveal">
+        <p class="eyebrow">Qui sommes-nous</p>
+        <h2>SENSEY’S<br/><span class="accent">JERSEYS</span></h2>
+      </div>
+      <div class="about-text reveal">
+        <p>SENSEY’S JERSEYS vend des maillots de football de clubs et de sélections depuis 3 ans, avec plus de 250 maillots déjà vendus. Toutes les commandes se font directement avec nous sur WhatsApp : une vraie personne te répond et confirme chaque commande avec toi.</p>
+        <ul class="about-facts">
+          <li><b>Contact :</b> WhatsApp <a data-wa-number></a></li>
+          <li><b>Commandes :</b> sur WhatsApp uniquement, après confirmation avec toi</li>
+          <li><b>Livraison :</b> partout, tarif selon ton lieu</li>
+        </ul>
+        <details class="conditions" id="conditions">
+          <summary>Conditions de vente</summary>
+          <ol>
+            <li><b>Commande.</b> Le panier du site prépare ta commande ; elle n'est validée qu'après confirmation de notre part sur WhatsApp (modèle, taille, délai, prix de la livraison).</li>
+            <li><b>Prix.</b> 180 000 GNF par maillot. Le prix de la livraison dépend de ton lieu et t'est annoncé avant validation.</li>
+            <li><b>Délai.</b> Les maillots sont sur commande : le délai t'est confirmé sur WhatsApp au moment de la commande.</li>
+            <li><b>Paiement.</b> Mobile money ou espèces à la livraison, selon la zone. Aucun paiement n'est demandé sur le site.</li>
+            <li><b>Taille.</b> Vérifie le guide des tailles avant de commander. Pour tout problème de taille ou de produit, écris-nous sur WhatsApp dès la réception : on cherche une solution ensemble.</li>
+            <li><b>Données.</b> Ton nom et ta ville servent uniquement à préparer ta commande ; ils ne sont pas enregistrés sur un serveur.</li>
+          </ol>
+        </details>
+      </div>
     </div>
   </section>
 
@@ -160,9 +218,9 @@
     <div class="faq-list">
       <details class="reveal"><summary>Comment passer commande ?</summary><p>Ajoute tes maillots au panier, choisis ta taille, puis clique sur « Commander via WhatsApp ». Ta commande arrive directement chez nous et on confirme le paiement et la livraison avec toi.</p></details>
       <details class="reveal"><summary>Quels sont les délais de livraison ?</summary><p>Nos maillots sont sur commande : on te confirme le délai sur WhatsApp. Le prix de la livraison dépend de ton lieu, on te le donne au moment de la commande.</p></details>
-      <details class="reveal"><summary>Comment choisir ma taille ?</summary><p>Nos maillots suivent la coupe standard. Si tu hésites entre deux tailles ou si tu aimes porter large, prends la taille au-dessus.</p></details>
-      <details class="reveal"><summary>Puis-je échanger un maillot ?</summary><p>Oui, sous 14 jours, si le maillot est dans son état d'origine.</p></details>
-      <details class="reveal"><summary>Quels moyens de paiement acceptez-vous ?</summary><p>Virement, mobile money, carte ou espèces à la livraison selon la zone. On te confirme les options sur WhatsApp.</p></details>
+      <details class="reveal"><summary>Comment choisir ma taille ?</summary><p>Regarde notre <a href="#tailles">guide des tailles</a> (M à XXL). Si tu hésites entre deux tailles ou si tu aimes porter large, prends la taille au-dessus.</p></details>
+      <details class="reveal"><summary>Et si la taille ne va pas ?</summary><p>Écris-nous sur WhatsApp dès la réception, avec une photo : on regarde ensemble la solution. Voir aussi nos <a href="#conditions" data-open-conditions>conditions de vente</a>.</p></details>
+      <details class="reveal"><summary>Quels moyens de paiement acceptez-vous ?</summary><p>Mobile money (Orange Money, MTN MoMo) ou espèces à la livraison, selon la zone. Aucun paiement n'est demandé sur le site : on confirme tout avec toi sur WhatsApp.</p></details>
     </div>
   </section>
 
@@ -182,7 +240,7 @@
 
   <footer class="footer">
     <span class="logo" data-shop-name>SENSEY’S JERSEYS</span>
-    <p>© <span id="year"></span> <span data-shop-name>SENSEY’S JERSEYS</span> — Tous droits réservés.</p>
+    <p>© <span id="year"></span> <span data-shop-name>SENSEY’S JERSEYS</span> — <a href="#conditions" data-open-conditions>Conditions de vente</a></p>
     <a href="#top">Retour en haut ↑</a>
   </footer>
 
@@ -200,6 +258,7 @@
         <h3 id="mTitle"></h3>
         <p class="m-price" id="mPrice"></p>
         <p class="m-stock" id="mStock"></p>
+        <button type="button" class="link-share" id="mShare">🔗 Partager ce maillot</button>
         <p class="label">Taille</p>
         <div class="sizes" id="mSizes"></div>
         <div class="qty-row">
@@ -211,11 +270,11 @@
   </div>
 
   <!-- ============ PANIER ============ -->
-  <aside class="drawer" id="drawer" aria-hidden="true">
+  <aside class="drawer" id="drawer" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="cartTitle">
     <div class="drawer-backdrop" data-close-cart></div>
     <div class="drawer-panel">
       <div class="drawer-head">
-        <h3>Ton panier</h3>
+        <h3 id="cartTitle">Ton panier</h3>
         <button class="icon-btn" data-close-cart aria-label="Fermer">✕</button>
       </div>
       <ul class="cart-items" id="cartItems"></ul>
@@ -223,8 +282,10 @@
         <div class="row"><span>Livraison</span><span>Selon ton lieu</span></div>
         <div class="row total"><span>Total maillots</span><span id="total"></span></div>
         <p class="ship-note">📍 Le prix de la livraison dépend de ton lieu, on te le confirme sur WhatsApp.</p>
-        <input type="text" id="custName" placeholder="Ton nom" />
-        <input type="text" id="custCity" placeholder="Ville / adresse de livraison" />
+        <label class="sr-only" for="custName">Ton nom</label>
+        <input type="text" id="custName" placeholder="Ton nom" autocomplete="name" />
+        <label class="sr-only" for="custCity">Ville ou adresse de livraison</label>
+        <input type="text" id="custCity" placeholder="Ville / adresse de livraison" autocomplete="address-level2" />
         <button class="btn btn-primary full" id="checkout">💬 Commander via WhatsApp</button>
         <button class="link-btn" id="clearCart">Vider le panier</button>
       </div>
@@ -237,6 +298,6 @@
   <script src="js/jersey.js"></script>
   <script src="js/app.js"></script>
   <script src="js/scroll-fx.js"></script>
-  <script type="module" src="js/jersey3d.js"></script>
+  <script type="module" src="js/load3d.js"></script>
 </body>
 </html>

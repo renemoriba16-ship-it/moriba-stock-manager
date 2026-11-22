@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://senseys-jerseys.netlify.app/sitemap.xml

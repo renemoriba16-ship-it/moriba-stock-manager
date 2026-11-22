@@ -1,3 +1,10 @@
+/* =========================== POLICES (hébergées avec le site) =========================== */
+@font-face { font-family: "Anton"; font-style: normal; font-weight: 400; font-display: swap; src: url("../fonts/anton-latin-400-normal.woff2") format("woff2"); }
+@font-face { font-family: "Inter"; font-style: normal; font-weight: 400; font-display: swap; src: url("../fonts/inter-latin-400-normal.woff2") format("woff2"); }
+@font-face { font-family: "Inter"; font-style: normal; font-weight: 500; font-display: swap; src: url("../fonts/inter-latin-500-normal.woff2") format("woff2"); }
+@font-face { font-family: "Inter"; font-style: normal; font-weight: 600; font-display: swap; src: url("../fonts/inter-latin-600-normal.woff2") format("woff2"); }
+@font-face { font-family: "Inter"; font-style: normal; font-weight: 700; font-display: swap; src: url("../fonts/inter-latin-700-normal.woff2") format("woff2"); }
+
 /* =========================== TOKENS =========================== */
 :root {
   --bg: #0a0a0c;
@@ -446,6 +453,43 @@ h3 { font-size: 1.6rem; }
 .roll-track.in-cta { margin: -20px 0 24px; }
 .roll-track.in-cta .roll-line { background: repeating-linear-gradient(90deg, rgba(198, 255, 0, .45) 0 14px, transparent 14px 26px); }
 .section-head h2 { will-change: transform; }
+
+/* =========================== GUIDE DES TAILLES / À PROPOS =========================== */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.size-wrap { display: grid; grid-template-columns: 1.2fr 1fr; gap: 32px; align-items: start; }
+.size-table { width: 100%; border-collapse: separate; border-spacing: 0; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; font-size: .98rem; }
+.size-table caption { caption-side: bottom; text-align: left; color: var(--muted); font-size: .82rem; padding-top: 10px; }
+.size-table th, .size-table td { padding: 16px 18px; text-align: left; border-bottom: 1px solid var(--line); }
+.size-table thead th { font-size: .75rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.size-table tbody th { font-family: var(--display); font-size: 1.3rem; font-weight: 400; color: var(--accent); }
+.size-table tbody tr:last-child > * { border-bottom: 0; }
+.size-tips { padding: 28px; border: 1px solid var(--line); border-radius: var(--radius); }
+.size-tips h3 { font-family: var(--body); text-transform: none; font-weight: 600; font-size: 1.1rem; letter-spacing: 0; margin-bottom: 12px; }
+.size-tips ul { margin: 0 0 14px; padding-left: 18px; color: var(--muted); display: grid; gap: 8px; }
+.size-tips b { color: var(--text); }
+.size-tips p { margin: 0; color: var(--muted); }
+.about-grid { display: grid; grid-template-columns: .8fr 1.2fr; gap: 48px; align-items: start; }
+.about-text > p { font-size: 1.1rem; margin-top: 0; }
+.about-facts { list-style: none; padding: 0; margin: 0 0 24px; display: grid; gap: 8px; color: var(--muted); }
+.about-facts b { color: var(--text); }
+.about-facts a, .faq details a, .footer a { color: var(--accent); }
+.conditions { border: 1px solid var(--line); border-radius: var(--radius); padding: 4px 22px; background: var(--card); }
+.conditions summary { cursor: pointer; padding: 16px 0; font-weight: 600; list-style: none; position: relative; }
+.conditions summary::-webkit-details-marker { display: none; }
+.conditions summary::after { content: "+"; position: absolute; right: 0; color: var(--accent); font-size: 1.4rem; line-height: 1; transition: transform .4s var(--ease); }
+.conditions[open] summary::after { transform: rotate(45deg); }
+.conditions ol { margin: 0 0 18px; padding-left: 20px; color: var(--muted); display: grid; gap: 10px; font-size: .94rem; }
+.conditions b { color: var(--text); }
+.link-share { align-self: flex-start; color: var(--muted); font-size: .85rem; margin: -10px 0 18px; text-decoration: underline; text-underline-offset: 3px; }
+.link-share:hover { color: var(--text); }
+@media (max-width: 860px) {
+  .size-wrap, .about-grid { grid-template-columns: 1fr; gap: 24px; }
+  .size-table th, .size-table td { padding: 12px 10px; font-size: .88rem; }
+}
+
+.notfound { min-height: 100svh; display: grid; place-content: center; justify-items: center; text-align: center; gap: 8px; padding: 24px; }
+.notfound h1 { font-size: clamp(3.5rem, 14vw, 8rem); }
+.notfound p { color: var(--muted); margin: 0 0 20px; }
 
 /* =========================== RESPONSIVE =========================== */
 @media (max-width: 1000px) {
