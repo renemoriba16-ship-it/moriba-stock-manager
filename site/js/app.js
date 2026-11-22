@@ -10,7 +10,7 @@
   const CAT_LABEL = { club: "Club", selection: "Sélection", retro: "Rétro" };
 
   const money = (n) => {
-    const v = Number.isInteger(n) ? n : n.toFixed(2);
+    const v = n.toLocaleString("fr-FR", { maximumFractionDigits: 2 }).replace(/\u202f|\u00a0/g, " ");
     return S.currencyAfter ? `${v} ${S.currency}` : `${S.currency}${v}`;
   };
   const byId = (id) => P.find((p) => p.id === id);
@@ -150,7 +150,7 @@
         <div class="product-media" style="--glow:${p.colors[0]}55">
           <div class="flip"><div class="flip-inner">
             <div class="flip-face front">${jerseySVG(p)}</div>
-            <div class="flip-face back">${jerseySVG(p, { side: "back", name: S.name, number: 10 })}</div>
+            <div class="flip-face back">${jerseySVG(p, { side: "back", name: S.backName || S.name, number: 10 })}</div>
           </div></div>
           ${out ? "" : `<button class="quick-add" data-quick="${p.id}" aria-label="Ajout rapide ${escapeXML(p.name)}">+</button>`}
         </div>

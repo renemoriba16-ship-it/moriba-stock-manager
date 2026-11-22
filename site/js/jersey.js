@@ -20,6 +20,12 @@
     }
   }
 
+  function brand(c3) {
+    const n = window.SHOP ? window.SHOP.name.toUpperCase() : "";
+    const fit = n.length > 8 ? ` textLength="96" lengthAdjust="spacingAndGlyphs"` : "";
+    return `<text x="100" y="128" font-family="Anton, Impact, sans-serif" font-size="${n.length > 8 ? 17 : 22}" letter-spacing="${n.length > 8 ? 1 : 3}" fill="${c3}" text-anchor="middle" opacity=".95"${fit}>${escapeXML(n)}</text>`;
+  }
+
   window.jerseySVG = function (p, opts = {}) {
     const id = "j" + ++uid;
     const [c1, c2, c3] = p.colors;
@@ -35,7 +41,7 @@
         <circle cx="128" cy="70" r="11" fill="none" stroke="${c3}" stroke-width="2.5"/>
         <path d="M122 70 l4 4 l8 -9" stroke="${c3}" stroke-width="2.5" fill="none"/>
         <text x="72" y="76" font-family="Anton, Impact, sans-serif" font-size="13" fill="${c3}" text-anchor="middle">${p.season || ""}</text>
-        <text x="100" y="128" font-family="Anton, Impact, sans-serif" font-size="22" letter-spacing="3" fill="${c3}" text-anchor="middle" opacity=".95">${window.SHOP ? window.SHOP.name : ""}</text>
+        ${brand(c3)}
         ${num ? `<text x="100" y="168" font-family="Anton, Impact, sans-serif" font-size="26" fill="${c3}" text-anchor="middle">${num}</text>` : ""}`;
     } else {
       print = `
