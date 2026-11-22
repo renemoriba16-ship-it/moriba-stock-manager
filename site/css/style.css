@@ -411,6 +411,17 @@ h3 { font-size: 1.6rem; }
 .banner-text { padding: clamp(24px, 5vw, 56px); }
 .banner-text h2 { margin-bottom: 24px; }
 
+/* =========================== MAILLOT 3D =========================== */
+.three-ready .hero-visual { min-height: min(640px, 78vh); }
+.three-ready .jersey-stage { display: none; }
+.jersey-3d { position: absolute; inset: 0; display: block; cursor: grab; animation: fade3d 1.2s var(--ease) both; }
+.jersey-3d:active { cursor: grabbing; }
+@keyframes fade3d { from { opacity: 0; transform: scale(.85) translateY(40px); } }
+.drag-hint { display: none; position: absolute; bottom: 4%; left: 50%; translate: -50% 0; z-index: 2; padding: 8px 14px; border-radius: 999px; font-size: .78rem; color: var(--muted); border: 1px solid var(--line); background: rgba(10, 10, 12, .6); backdrop-filter: blur(6px); pointer-events: none; animation: hint 2.4s ease-in-out infinite; }
+.three-ready .drag-hint { display: block; }
+.drag-hint.gone { opacity: 0; transition: opacity .6s; animation: none; }
+@keyframes hint { 0%, 100% { transform: translateX(-6px); } 50% { transform: translateX(6px); } }
+
 /* =========================== SCROLL FX (ballons) =========================== */
 .hero, .section, .footer, .roll-track { position: relative; z-index: 1; }
 .marquee { position: relative; z-index: 2; }
@@ -434,6 +445,7 @@ h3 { font-size: 1.6rem; }
   .perks, .reviews { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 860px) {
+  .three-ready .hero-visual { min-height: 380px; }
   .nav { position: fixed; inset: 0; background: var(--bg); flex-direction: column; justify-content: center; align-items: center; gap: 28px; clip-path: circle(0 at calc(100% - 40px) 40px); transition: clip-path .7s var(--ease); z-index: -1; }
   .nav a { font-family: var(--display); font-size: 2.6rem; color: var(--text); text-transform: uppercase; }
   .nav.open { clip-path: circle(150% at calc(100% - 40px) 40px); }

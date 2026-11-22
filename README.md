@@ -43,4 +43,12 @@ Site vitrine animé pour la vente de maillots, 100 % statique (HTML/CSS/JS, aucu
 - Commande envoyée directement sur **WhatsApp** avec le récapitulatif complet
 - Responsive mobile, respecte « réduire les animations »
 
+**Maillot 3D (Blender + three.js)**
+- Le modèle 3D est généré par le script Blender `blender/maillot.py` et exporté dans `site/models/maillot.glb`.
+  Pour le régénérer : `pip install bpy` puis `python blender/maillot.py` (ou `blender -b -P blender/maillot.py`).
+- Le site l'affiche en direct avec three.js (`site/js/jersey3d.js`, bibliothèque copiée dans `site/vendor/three/`) :
+  il se balance, suit la souris, se fait tourner au doigt, change de coloris et montre le dos quand on défile.
+- La 3D ne fonctionne qu'en ligne (ou via un petit serveur local, ex. `python3 -m http.server` dans `site/`) ;
+  en ouvrant `index.html` directement, le carrousel photo s'affiche à la place.
+
 **Personnaliser :** tout se règle dans `site/js/config.js` — nom de la boutique, numéro WhatsApp, e-mail, Instagram, devise, prix unique des maillots, et la liste des maillots (nom, couleurs, motif, stock).

@@ -123,6 +123,7 @@
   heroStage.innerHTML = face(heroPicks[0], "front", { number: 10 });
   if (!reduceMotion) {
     setInterval(() => {
+      if (document.documentElement.classList.contains("three-ready")) return;
       const old = heroStage.firstElementChild;
       old.classList.add("swap-out");
       setTimeout(() => {
