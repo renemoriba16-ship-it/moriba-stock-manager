@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MORIBA — Boutique de maillots</title>
+  <meta name="description" content="Maillots de foot club, sélections et rétro. Flocage personnalisé, livraison rapide." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="cursor-glow" aria-hidden="true"></div>
+  <div class="progress" aria-hidden="true"></div>
+
+  <!-- ============ HEADER ============ -->
+  <header class="header" id="top">
+    <a href="#top" class="logo" data-shop-name>MORIBA</a>
+    <nav class="nav" id="nav">
+      <a href="#catalogue">Catalogue</a>
+      <a href="#flocage">Flocage</a>
+      <a href="#avis">Avis</a>
+      <a href="#faq">FAQ</a>
+      <a href="#contact">Contact</a>
+    </nav>
+    <div class="header-actions">
+      <button class="icon-btn cart-btn" id="openCart" aria-label="Ouvrir le panier">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6h15l-1.5 9h-12z"/><path d="M6 6 5 3H2"/><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/></svg>
+        <span class="cart-count" id="cartCount">0</span>
+      </button>
+      <button class="icon-btn burger" id="burger" aria-label="Menu"><span></span><span></span></button>
+    </div>
+  </header>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero">
+    <div class="hero-bg" aria-hidden="true">
+      <span class="blob b1"></span><span class="blob b2"></span><span class="blob b3"></span>
+      <div class="grid-lines"></div>
+    </div>
+    <div class="hero-content">
+      <p class="eyebrow reveal">Nouvelle collection 25/26 • Coupe 2026</p>
+      <h1 class="hero-title">
+        <span class="line"><span class="word">PORTE</span></span>
+        <span class="line"><span class="word outline">TES</span> <span class="word accent">COULEURS</span></span>
+      </h1>
+      <p class="hero-sub reveal" data-tagline></p>
+      <div class="hero-cta reveal">
+        <a href="#catalogue" class="btn btn-primary magnetic">Voir le catalogue <span class="arrow">→</span></a>
+        <a href="#flocage" class="btn btn-ghost magnetic">Personnaliser</a>
+      </div>
+      <ul class="hero-stats reveal">
+        <li><strong data-count="1200">0</strong><span>maillots vendus</span></li>
+        <li><strong data-count="48">0</strong><span>modèles</span></li>
+        <li><strong data-count="4.9" data-decimals="1">0</strong><span>note clients</span></li>
+      </ul>
+    </div>
+    <div class="hero-visual" id="heroVisual">
+      <div class="jersey-stage" id="heroJersey"></div>
+      <div class="orbit"><span>⚽</span></div>
+    </div>
+    <a href="#catalogue" class="scroll-hint" aria-label="Défiler"><span></span></a>
+  </section>
+
+  <!-- ============ MARQUEE ============ -->
+  <div class="marquee" aria-hidden="true">
+    <div class="marquee-track">
+      <span>LIVRAISON RAPIDE</span><i>✦</i><span>FLOCAGE OFFERT DÈS 2 MAILLOTS</span><i>✦</i><span>QUALITÉ PREMIUM</span><i>✦</i><span>PAIEMENT SÉCURISÉ</span><i>✦</i><span>ÉCHANGE 14 JOURS</span><i>✦</i>
+      <span>LIVRAISON RAPIDE</span><i>✦</i><span>FLOCAGE OFFERT DÈS 2 MAILLOTS</span><i>✦</i><span>QUALITÉ PREMIUM</span><i>✦</i><span>PAIEMENT SÉCURISÉ</span><i>✦</i><span>ÉCHANGE 14 JOURS</span><i>✦</i>
+    </div>
+  </div>
+
+  <!-- ============ CATEGORIES ============ -->
+  <section class="section categories">
+    <div class="section-head reveal">
+      <p class="eyebrow">Collections</p>
+      <h2>Choisis ton camp</h2>
+    </div>
+    <div class="cat-grid">
+      <button class="cat-card reveal tilt" data-goto="club"><span class="cat-num">01</span><h3>Clubs</h3><p>Domicile, extérieur, third</p><span class="cat-arrow">→</span></button>
+      <button class="cat-card reveal tilt" data-goto="selection"><span class="cat-num">02</span><h3>Sélections</h3><p>Spécial Coupe 2026</p><span class="cat-arrow">→</span></button>
+      <button class="cat-card reveal tilt" data-goto="retro"><span class="cat-num">03</span><h3>Rétro</h3><p>Les légendes reviennent</p><span class="cat-arrow">→</span></button>
+    </div>
+  </section>
+
+  <!-- ============ CATALOGUE ============ -->
+  <section class="section" id="catalogue">
+    <div class="section-head reveal">
+      <p class="eyebrow">Catalogue</p>
+      <h2>Tous les maillots</h2>
+    </div>
+    <div class="toolbar reveal">
+      <div class="filters" role="tablist">
+        <button class="chip active" data-filter="all">Tous</button>
+        <button class="chip" data-filter="club">Clubs</button>
+        <button class="chip" data-filter="selection">Sélections</button>
+        <button class="chip" data-filter="retro">Rétro</button>
+      </div>
+      <div class="toolbar-right">
+        <input type="search" id="search" placeholder="Rechercher un maillot…" aria-label="Rechercher" />
+        <select id="sort" aria-label="Trier">
+          <option value="default">Pertinence</option>
+          <option value="price-asc">Prix croissant</option>
+          <option value="price-desc">Prix décroissant</option>
+          <option value="name">Nom A→Z</option>
+        </select>
+      </div>
+    </div>
+    <div class="products" id="products"></div>
+    <p class="empty" id="empty" hidden>Aucun maillot ne correspond à ta recherche.</p>
+  </section>
+
+  <!-- ============ FLOCAGE ============ -->
+  <section class="section flocage" id="flocage">
+    <div class="flocage-grid">
+      <div class="flocage-text reveal">
+        <p class="eyebrow">Atelier flocage</p>
+        <h2>Ton nom.<br/>Ton numéro.</h2>
+        <p>Personnalise n'importe quel maillot avec ton nom et ton numéro, imprimés avec la police officielle. Essaie en direct :</p>
+        <div class="flocage-form">
+          <label>Nom <input type="text" id="flName" maxlength="12" value="MORIBA" /></label>
+          <label>Numéro <input type="number" id="flNumber" min="0" max="99" value="10" /></label>
+          <label>Modèle <select id="flModel"></select></label>
+        </div>
+        <button class="btn btn-primary magnetic" id="flAdd">Ajouter au panier</button>
+      </div>
+      <div class="flocage-preview reveal">
+        <div class="flip" id="flFlip">
+          <div class="flip-inner">
+            <div class="flip-face front" id="flFront"></div>
+            <div class="flip-face back" id="flBack"></div>
+          </div>
+        </div>
+        <button class="btn btn-ghost small" id="flTurn">↻ Retourner</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ AVANTAGES ============ -->
+  <section class="section perks">
+    <div class="perk reveal"><span class="perk-ico">🚚</span><h3>Livraison rapide</h3><p>Expédition sous 24/48h, suivi inclus.</p></div>
+    <div class="perk reveal"><span class="perk-ico">🧵</span><h3>Qualité premium</h3><p>Tissu respirant, coutures renforcées.</p></div>
+    <div class="perk reveal"><span class="perk-ico">🔁</span><h3>Échange facile</h3><p>Taille pas bonne ? Échange sous 14 jours.</p></div>
+    <div class="perk reveal"><span class="perk-ico">💬</span><h3>Commande WhatsApp</h3><p>Une question ? On répond en direct.</p></div>
+  </section>
+
+  <!-- ============ AVIS ============ -->
+  <section class="section" id="avis">
+    <div class="section-head reveal">
+      <p class="eyebrow">Ils en parlent</p>
+      <h2>Avis clients</h2>
+    </div>
+    <div class="reviews" id="reviews">
+      <figure class="review reveal"><div class="stars">★★★★★</div><blockquote>Qualité au top, flocage parfait. Reçu en 2 jours !</blockquote><figcaption>Amadou K.</figcaption></figure>
+      <figure class="review reveal"><div class="stars">★★★★★</div><blockquote>Le rétro 98 est magnifique, exactement comme sur les photos.</blockquote><figcaption>Sarah M.</figcaption></figure>
+      <figure class="review reveal"><div class="stars">★★★★★</div><blockquote>Commande par WhatsApp super simple, vendeur très réactif.</blockquote><figcaption>Yannick D.</figcaption></figure>
+      <figure class="review reveal"><div class="stars">★★★★☆</div><blockquote>Taillent un peu petit, prenez une taille au-dessus. Sinon parfait.</blockquote><figcaption>Fatou S.</figcaption></figure>
+    </div>
+  </section>
+
+  <!-- ============ FAQ ============ -->
+  <section class="section faq" id="faq">
+    <div class="section-head reveal">
+      <p class="eyebrow">Questions</p>
+      <h2>FAQ</h2>
+    </div>
+    <div class="faq-list">
+      <details class="reveal"><summary>Comment passer commande ?</summary><p>Ajoute tes maillots au panier, choisis ta taille et ton flocage, puis clique sur « Commander via WhatsApp ». Ta commande arrive directement chez nous et on confirme le paiement et la livraison avec toi.</p></details>
+      <details class="reveal"><summary>Quels sont les délais de livraison ?</summary><p>Les commandes sont expédiées sous 24 à 48h. Comptez 2 à 5 jours ouvrés selon votre ville.</p></details>
+      <details class="reveal"><summary>Comment choisir ma taille ?</summary><p>Nos maillots suivent la coupe standard. Si tu hésites entre deux tailles ou si tu aimes porter large, prends la taille au-dessus.</p></details>
+      <details class="reveal"><summary>Puis-je échanger un maillot ?</summary><p>Oui, sous 14 jours, si le maillot n'est pas floqué et dans son état d'origine.</p></details>
+      <details class="reveal"><summary>Quels moyens de paiement acceptez-vous ?</summary><p>Virement, mobile money, carte ou espèces à la livraison selon la zone. On te confirme les options sur WhatsApp.</p></details>
+    </div>
+  </section>
+
+  <!-- ============ CONTACT / CTA ============ -->
+  <section class="section cta" id="contact">
+    <div class="cta-inner reveal">
+      <h2>Une question ? <span class="accent">On est là.</span></h2>
+      <p>Écris-nous directement, on répond en général en moins d'une heure.</p>
+      <div class="hero-cta">
+        <a class="btn btn-primary magnetic" id="waContact" target="_blank" rel="noopener">💬 WhatsApp</a>
+        <a class="btn btn-ghost magnetic" id="mailContact">✉️ E-mail</a>
+        <a class="btn btn-ghost magnetic" id="igContact" target="_blank" rel="noopener">📸 Instagram</a>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <span class="logo" data-shop-name>MORIBA</span>
+    <p>© <span id="year"></span> <span data-shop-name>MORIBA</span> — Tous droits réservés.</p>
+    <a href="#top">Retour en haut ↑</a>
+  </footer>
+
+  <!-- ============ MODAL PRODUIT ============ -->
+  <div class="modal" id="modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-panel">
+      <button class="icon-btn modal-close" data-close aria-label="Fermer">✕</button>
+      <div class="modal-visual">
+        <div class="flip" id="mFlip"><div class="flip-inner"><div class="flip-face front" id="mFront"></div><div class="flip-face back" id="mBack"></div></div></div>
+        <button class="btn btn-ghost small" id="mTurn">↻ Voir le dos</button>
+      </div>
+      <div class="modal-info">
+        <p class="eyebrow" id="mCat"></p>
+        <h3 id="mTitle"></h3>
+        <p class="m-price" id="mPrice"></p>
+        <p class="m-stock" id="mStock"></p>
+        <p class="label">Taille</p>
+        <div class="sizes" id="mSizes"></div>
+        <label class="toggle"><input type="checkbox" id="mFlocage" /> <span>Ajouter un flocage (<b id="mFlPrice"></b>)</span></label>
+        <div class="m-flocage" id="mFlFields" hidden>
+          <input type="text" id="mFlName" maxlength="12" placeholder="NOM" />
+          <input type="number" id="mFlNumber" min="0" max="99" placeholder="N°" />
+        </div>
+        <div class="qty-row">
+          <div class="qty"><button id="mMinus" aria-label="Moins">−</button><span id="mQty">1</span><button id="mPlus" aria-label="Plus">+</button></div>
+          <button class="btn btn-primary grow" id="mAdd">Ajouter au panier</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ PANIER ============ -->
+  <aside class="drawer" id="drawer" aria-hidden="true">
+    <div class="drawer-backdrop" data-close-cart></div>
+    <div class="drawer-panel">
+      <div class="drawer-head">
+        <h3>Ton panier</h3>
+        <button class="icon-btn" data-close-cart aria-label="Fermer">✕</button>
+      </div>
+      <div class="ship-bar"><p id="shipText"></p><div class="ship-track"><span id="shipFill"></span></div></div>
+      <ul class="cart-items" id="cartItems"></ul>
+      <div class="drawer-foot">
+        <div class="row"><span>Sous-total</span><span id="subTotal"></span></div>
+        <div class="row"><span>Livraison</span><span id="shipCost"></span></div>
+        <div class="row total"><span>Total</span><span id="total"></span></div>
+        <input type="text" id="custName" placeholder="Ton nom" />
+        <input type="text" id="custCity" placeholder="Ville / adresse de livraison" />
+        <button class="btn btn-primary full" id="checkout">💬 Commander via WhatsApp</button>
+        <button class="link-btn" id="clearCart">Vider le panier</button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="js/config.js"></script>
+  <script src="js/jersey.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
