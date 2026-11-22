@@ -100,6 +100,18 @@ textarea{resize:vertical;min-height:58px}
 .deliv .st.run{color:var(--violet)}
 .copy{margin-top:8px;font:600 13px var(--body);background:var(--paper-2);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:5px 10px;cursor:pointer}
 .empty{font-size:13px;color:var(--mute);margin:0}
+.ctl{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}
+.ctl button,.addp button{font:600 12px var(--body);background:var(--paper-2);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:3px 9px;cursor:pointer}
+.ctl button.del{color:var(--rose)}
+.addp{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)}
+.addp .full{grid-column:1/-1}
+.addp label{font-size:12px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.addp input{font:14px var(--body);border:2px solid var(--line);border-radius:6px;padding:6px;width:100%;box-sizing:border-box;background:#fff;color:var(--ink)}
+.addp .send{font-size:14px;padding:8px}
+.devise{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13px;color:var(--mute)}
+.devise select{width:auto;padding:4px 6px}
+.brief pre{white-space:pre-wrap;word-wrap:break-word;font:14px/1.55 var(--body);margin:6px 0 0}
+.brief .d{font-size:12px;color:var(--mute);text-transform:uppercase;letter-spacing:1px}
 @media (prefers-reduced-motion:reduce){.bar i{transition:none}}
 </style>
 
@@ -131,9 +143,9 @@ textarea{resize:vertical;min-height:58px}
         </div>
       </div>
       <div class="stats">
-        <div class="stat"><span>Chiffre d'affaires</span><b id="sRev">0 F</b></div>
-        <div class="stat"><span>Achats fournisseurs</span><b id="sExp">0 F</b></div>
-        <div class="stat"><span>Commandes en cours</span><b id="sOrd">0</b></div>
+        <div class="stat"><span id="lRev">Chiffre d'affaires</span><b id="sRev">0 F</b></div>
+        <div class="stat"><span id="lExp">Achats fournisseurs</span><b id="sExp">0 F</b></div>
+        <div class="stat"><span id="lOrd">Commandes en cours</span><b id="sOrd">0</b></div>
         <div class="stat"><span>Conversations</span><b id="sConv">0</b></div>
       </div>
       <div class="depts" id="depts"></div>
@@ -168,9 +180,27 @@ textarea{resize:vertical;min-height:58px}
         <ul class="deliv" id="deliv"></ul>
       </section>
 
+      <section class="card brief">
+        <h2>Point du matin</h2>
+        <div id="brief"><p class="empty">Chaque matin vers 7 h 41 (heure de Malaisie), l'équipe prépare ici le point du jour : produits à recommander, priorités et idée de promo. Vous recevez aussi une notification sur votre téléphone.</p></div>
+      </section>
+
       <section class="card">
         <h2>Stock de l'entrepôt</h2>
+        <p class="ai" id="stockMode">Chargement de votre stock…</p>
         <div class="stock" id="stock"></div>
+        <form class="addp" id="addProd" hidden>
+          <label class="full" for="pName">Produit<input id="pName" required maxlength="60" placeholder="Ex. : Riz parfumé 10 kg"></label>
+          <label for="pQty">Quantité en stock<input id="pQty" type="number" min="0" step="1" required value="0"></label>
+          <label for="pMin">Seuil d'alerte<input id="pMin" type="number" min="0" step="1" required value="5"></label>
+          <label for="pMax">Stock cible<input id="pMax" type="number" min="1" step="1" required value="30"></label>
+          <label for="pPrice">Prix de vente<input id="pPrice" type="number" min="0" step="any" value="0"></label>
+          <label class="full" for="pBuy">Prix d'achat<input id="pBuy" type="number" min="0" step="any" value="0"></label>
+          <button class="send full" type="submit" id="pSubmit">Ajouter le produit</button>
+          <button class="full" type="button" id="pCancel" hidden>Annuler la modification</button>
+        </form>
+        <div class="devise" id="deviseRow" hidden><label for="dev">Devise</label>
+          <select id="dev"><option value="RM">RM (ringgit)</option><option value="F">F CFA</option><option value="€">€ (euro)</option><option value="$">$ (dollar)</option></select></div>
       </section>
 
       <section class="card">
@@ -281,7 +311,7 @@ function bfs(sx, sy, tx, ty) {
 function roomCells(r) { const o = []; for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) if (walkable(x, y)) o.push([x, y]); return o; }
 
 /* =================== Économie =================== */
-const products = [
+const EXAMPLES = [
   {name:"Riz 25 kg", qty:46, max:80, min:18, price:17500, buy:14000},
   {name:"Huile 5 L", qty:30, max:60, min:14, price:6500, buy:5200},
   {name:"Sucre 1 kg", qty:19, max:70, min:20, price:800, buy:600},
@@ -289,9 +319,11 @@ const products = [
   {name:"Savon (carton)", qty:20, max:40, min:8, price:9000, buy:7000},
   {name:"Farine 50 kg", qty:16, max:40, min:10, price:21000, buy:17500},
 ];
+let products = EXAMPLES.map(p => ({...p}));
+let realMode = false, devise = "F", bons = 0;
 const econ = {rev:0, exp:0, convs:0};
 const pending = new Set();
-const fmt = n => n.toLocaleString("fr-FR") + " F";
+const fmt = n => Math.round(n).toLocaleString("fr-FR") + " " + devise;
 const pick = a => a[Math.floor(Math.random() * a.length)];
 
 /* =================== Agents =================== */
@@ -435,16 +467,24 @@ function checkStock(inv) {
     [1, "Je lance la commande tout de suite."],
   ], () => {
     const logi = pickFree("logistique", "emile");
-    assign(buyer, [goto("seat"), wait(6, `commande ${n} × ${low.name}`, {seat:true, show:true}), run(() => {
-      const cost = n * low.buy; econ.exp += cost;
-      log(buyer, `a commandé ${n} × ${low.name} pour ${fmt(cost)}.`);
+    assign(buyer, [goto("seat"), wait(6, realMode ? `prépare le bon de commande : ${n} × ${low.name}` : `commande ${n} × ${low.name}`, {seat:true, show:true}), run(() => {
+      const cost = n * low.buy;
       const fin = pickFree("finance", "diallo");
+      if (realMode) {
+        bons++;
+        log(buyer, `a préparé le bon de commande : ${n} × ${low.name}${cost ? ` (environ ${fmt(cost)})` : ""}. À valider par vous.`);
+        assign(fin, [goto("seat"), wait(5, `prévoit le budget de la commande de ${low.name}`, {seat:true, show:true}), run(() => log(fin, cost ? `a réservé environ ${fmt(cost)} pour la commande de ${low.name}.` : `attend le prix d'achat de ${low.name} pour prévoir le budget.`))]);
+        return;
+      }
+      econ.exp += cost;
+      log(buyer, `a commandé ${n} × ${low.name} pour ${fmt(cost)}.`);
       assign(fin, [goto("seat"), wait(5, `enregistre la facture de ${fmt(cost)}`, {seat:true, show:true}), run(() => log(fin, `a payé le fournisseur : ${fmt(cost)} pour ${low.name}.`))]);
     }), talk(logi.id, [
       [0, `${logi.name}, ${n} × ${low.name} arrivent demain matin.`],
       [1, "Je planifie la réception et je range."],
     ], () => {
-      assign(logi, [goto("seat"), wait(5, `planifie la réception de ${low.name}`, {seat:true, show:true}), goto({room:"entrepot"}), wait(6, `range ${n} × ${low.name} à l'entrepôt`, {show:true}), run(() => {
+      assign(logi, [goto("seat"), wait(5, `planifie la réception de ${low.name}`, {seat:true, show:true}), goto({room:"entrepot"}), wait(6, realMode ? `libère la place pour ${n} × ${low.name}` : `range ${n} × ${low.name} à l'entrepôt`, {show:true}), run(() => {
+        if (realMode) { log(logi, `a préparé la place pour ${n} × ${low.name}. Mettez la quantité à jour à l'arrivée.`); return; }
         low.qty += n; pending.delete(low.name);
         log(logi, `a rangé ${n} × ${low.name}. Stock : ${low.qty}.`);
         say(logi, "Livraison rangée !"); renderStock();
@@ -453,6 +493,7 @@ function checkStock(inv) {
   })]);
 }
 function sell(a) {
+  if (realMode) { if (Math.random() < .5) say(a, pick(["Client servi !", "Encaissement fait", "Devis envoyé"]), 2); return; }
   const avail = products.filter(p => p.qty > 0); if (!avail.length) return;
   const p = pick(avail), n = Math.min(p.qty, 1 + Math.floor(Math.random() * 4));
   p.qty -= n; econ.rev += n * p.price;
@@ -465,8 +506,8 @@ function endOfWork(a) {
   if (d === "inventaire" && Math.random() < .6) checkStock(a);
   else if (d === "data" && Math.random() < .5) {
     const p = pick(products), up = Math.random() < .5;
-    log(a, up ? `prévoit +15 % de demande de ${p.name} avant samedi.` : `recommande de relever le seuil de ${p.name}.`);
-    p.min = Math.min(p.max - 8, p.min + 2); renderStock();
+    log(a, realMode ? pick([`surveille l'écoulement de ${p.name} (${p.qty} en stock).`, p.qty <= p.min * 1.5 ? `alerte : ${p.name} approche de son seuil.` : `juge le stock de ${p.name} confortable.`]) : up ? `prévoit +15 % de demande de ${p.name} avant samedi.` : `recommande de relever le seuil de ${p.name}.`);
+    if (!realMode) { p.min = Math.min(p.max - 8, p.min + 2); renderStock(); }
     if (Math.random() < .5) assign(a, [talk("hawa", [[0, `Hawa, attention au ${p.name} cette semaine.`], [1, "Merci, je préviens les équipes."]])]);
   } else if (d === "support" && Math.random() < .6) log(a, `a résolu un ticket : ${pick(["un client demande où en est sa livraison","une cliente échange un sac de farine abîmé","un commerçant veut un prix de gros sur le savon","un client signale une erreur de monnaie"])}.`);
   else if (d === "marketing" && Math.random() < .4) log(a, pick(["a publié la promo du jour sur WhatsApp.","a terminé l'affiche du marché de samedi.","a répondu à 12 messages du groupe clients."]));
@@ -498,9 +539,11 @@ const delivEl = document.getElementById("deliv"), aiEl = document.getElementById
   const [smp, db] = await Promise.all([use("sample"), use("db")]);
   sampleFn = smp;
   if (db) {
+    connectStock(db);
     dbCol = db.collection("livrables");
     dbCol.orderBy("at", "desc").limit(30).onSnapshot(snap => { remote = snap.docs.map(d => ({id:d.id, ...d.data(), status:"terminé"})); renderDeliv(); }, () => {});
   }
+  if (!db) updateStockMode();
   aiEl.className = "ai" + (sampleFn ? " on" : "");
   aiEl.textContent = sampleFn
     ? "Les agents travaillent pour de vrai : chaque mission produit un livrable rédigé par Claude, gardé ici et visible sur tous vos appareils."
@@ -510,7 +553,7 @@ const delivEl = document.getElementById("deliv"), aiEl = document.getElementById
 const errCopy = {not_granted:"Vous n'avez pas autorisé la page à utiliser Claude.", rate_limited:"Trop de demandes pour l'instant. Réessayez dans quelques minutes.", session_expired:"Reconnectez-vous à Claude puis réessayez.", refused:"Claude n'a pas pu traiter cette mission. Reformulez-la.", sampling_disabled:"Claude n'est pas disponible sur ce compte."};
 async function realWork(job, agent) {
   if (!sampleFn) { job.status = "simulé"; renderDeliv(); return; }
-  const stock = products.map(p => `${p.name} : ${p.qty} en stock (seuil ${p.min}, prix ${p.price} F)`).join("; ");
+  const stock = products.map(p => `${p.name} : ${p.qty} en stock (seuil ${p.min}, cible ${p.max}, prix de vente ${p.price} ${devise}, prix d'achat ${p.buy} ${devise})`).join("; ") + (realMode ? "" : " (données d'exemple)");
   const prompt = `Tu es ${job.name}, ${job.role} au pôle « ${job.dept} » du QG Moriba, un commerce de produits alimentaires et d'hygiène (vente au détail et en gros, prix en francs CFA).
 État actuel du stock : ${stock}.
 Ta mission : « ${job.mission} ».
@@ -980,13 +1023,79 @@ function renderAgent() {
   for (const m of items.slice(0, 8)) { const li = document.createElement("li"), b = document.createElement("b"); b.textContent = m.t + " "; li.append(b, m.text); mem.append(li); }
 }
 const stockEl = document.getElementById("stock");
+let stockDb = null, prodCol = null, editingId = null;
+const esc = t => String(t).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function renderStock() {
   stockEl.textContent = "";
   for (const p of products) {
     const r = document.createElement("div"); r.className = "row";
-    r.innerHTML = `<span>${p.name}${pending.has(p.name) ? " · <span style='color:var(--violet)'>commandé</span>" : ""}</span><span class="q">${p.qty} / ${p.max}</span><div class="bar"><i class="${p.qty <= p.min ? "low" : ""}" style="width:${Math.min(100, p.qty / p.max * 100)}%"></i><s style="left:${p.min / p.max * 100}%"></s></div>`;
+    const max = Math.max(1, p.max);
+    r.innerHTML = `<span>${esc(p.name)}${pending.has(p.name) ? ` · <span style='color:var(--violet)'>${realMode ? "à recommander" : "commandé"}</span>` : ""}</span><span class="q">${p.qty} / ${p.max}</span><div class="bar"><i class="${p.qty <= p.min ? "low" : ""}" style="width:${Math.min(100, p.qty / max * 100)}%"></i><s style="left:${Math.min(100, p.min / max * 100)}%"></s></div>`;
+    if (realMode && prodCol) {
+      const ctl = document.createElement("div"); ctl.className = "ctl";
+      const mk = (label, fn, cls, aria) => { const b = document.createElement("button"); b.type = "button"; b.textContent = label; if (cls) b.className = cls; if (aria) b.setAttribute("aria-label", aria); b.onclick = fn; ctl.append(b); };
+      mk("−1", () => setQty(p, p.qty - 1), "", `Retirer 1 ${p.name}`);
+      mk("+1", () => setQty(p, p.qty + 1), "", `Ajouter 1 ${p.name}`);
+      mk("+10", () => setQty(p, p.qty + 10), "", `Ajouter 10 ${p.name}`);
+      mk("Modifier", () => startEdit(p));
+      mk("Supprimer", () => { if (ctl.dataset.confirm) removeProd(p); else { ctl.dataset.confirm = "1"; ctl.lastChild.textContent = "Confirmer la suppression"; } }, "del");
+      r.append(ctl);
+    }
     stockEl.append(r);
   }
+}
+const stockModeEl = document.getElementById("stockMode"), addForm = document.getElementById("addProd");
+function updateStockMode() {
+  if (!stockDb) { stockModeEl.className = "ai"; stockModeEl.textContent = "Produits d'exemple. Ouvrez la page dans Claude pour enregistrer vos vrais produits."; return; }
+  addForm.hidden = false; document.getElementById("deviseRow").hidden = false;
+  stockModeEl.className = "ai" + (realMode ? " on" : "");
+  stockModeEl.textContent = realMode
+    ? `Votre vrai stock : ${products.length} produit(s). Les agents surveillent ces chiffres et préparent les bons de commande. Ils ne modifient jamais les quantités : c'est vous qui les mettez à jour.`
+    : "Ces produits sont des exemples. Ajoutez votre premier produit ci-dessous : les exemples disparaissent et les agents travaillent sur vos vrais chiffres.";
+}
+function connectStock(db) {
+  stockDb = db; prodCol = db.collection("produits");
+  prodCol.onSnapshot(snap => {
+    const list = snap.docs.map(d => ({id:d.id, ...d.data()})).filter(p => p.name);
+    if (list.length) {
+      realMode = true;
+      products = list.map(p => ({id:p.id, name:String(p.name).slice(0, 60), qty:Math.max(0, Math.floor(+p.qty || 0)), min:Math.max(0, +p.min || 0), max:Math.max(1, +p.max || 1), price:Math.max(0, +p.price || 0), buy:Math.max(0, +p.buy || 0)})).sort((a, b) => a.name.localeCompare(b.name, "fr"));
+      for (const n of [...pending]) { const q = products.find(x => x.name === n); if (!q || q.qty > q.min) pending.delete(n); }
+    } else if (realMode) { realMode = false; products = EXAMPLES.map(p => ({...p})); pending.clear(); }
+    if (!stockEl.contains(document.activeElement)) renderStock();
+    updateStockMode();
+  }, () => { stockModeEl.textContent = "Impossible de lire votre stock pour l'instant. Rechargez la page."; });
+  db.doc("config/reglages").onSnapshot(snap => { const d = snap.exists ? snap.data() : null; devise = (d && d.devise) || "F"; document.getElementById("dev").value = devise; }, () => {});
+  db.collection("resumes").orderBy("at", "desc").limit(3).onSnapshot(snap => renderBrief(snap.docs.map(d => d.data())), () => {});
+  updateStockMode();
+}
+function setQty(p, q) { if (!prodCol) return; prodCol.doc(p.id).update({qty:Math.max(0, Math.floor(q))}).catch(() => { stockModeEl.textContent = "La modification n'a pas été enregistrée. Réessayez."; }); }
+function removeProd(p) { if (!prodCol) return; prodCol.doc(p.id).delete().catch(() => { stockModeEl.textContent = "La suppression a échoué. Réessayez."; }); }
+const F = id => document.getElementById(id);
+function startEdit(p) {
+  editingId = p.id;
+  F("pName").value = p.name; F("pQty").value = p.qty; F("pMin").value = p.min; F("pMax").value = p.max; F("pPrice").value = p.price; F("pBuy").value = p.buy;
+  F("pSubmit").textContent = `Enregistrer ${p.name}`; F("pCancel").hidden = false; F("pName").focus();
+}
+function resetForm() { editingId = null; addForm.reset(); F("pSubmit").textContent = "Ajouter le produit"; F("pCancel").hidden = true; }
+F("pCancel").onclick = resetForm;
+addForm.addEventListener("submit", e => {
+  e.preventDefault(); if (!prodCol) return;
+  const data = {name:F("pName").value.trim().slice(0, 60), qty:Math.max(0, Math.floor(+F("pQty").value || 0)), min:Math.max(0, +F("pMin").value || 0), max:Math.max(1, +F("pMax").value || 1), price:Math.max(0, +F("pPrice").value || 0), buy:Math.max(0, +F("pBuy").value || 0)};
+  if (!data.name) return;
+  const id = editingId || ("p" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5));
+  prodCol.doc(id).set(data).then(resetForm, () => { stockModeEl.textContent = "Le produit n'a pas été enregistré. Réessayez."; });
+});
+F("dev").onchange = () => { if (stockDb) stockDb.doc("config/reglages").set({devise:F("dev").value}).catch(() => {}); };
+function renderBrief(list) {
+  const el = F("brief"); if (!list.length) return;
+  el.textContent = "";
+  list.forEach((b, i) => {
+    const wrap = document.createElement(i ? "details" : "div");
+    const d = document.createElement(i ? "summary" : "div"); d.className = "d"; d.textContent = b.date || new Date(b.at).toLocaleDateString("fr-FR", {weekday:"long", day:"numeric", month:"long"});
+    const pre = document.createElement("pre"); pre.textContent = String(b.texte || "");
+    wrap.append(d, pre); if (i) wrap.style.marginTop = "10px"; el.append(wrap);
+  });
 }
 document.querySelectorAll("[data-speed]").forEach(btn => btn.onclick = () => {
   speed = +btn.dataset.speed;
@@ -1040,9 +1149,15 @@ function frame(now) {
   if ((uiT -= real) <= 0) {
     uiT = .25;
     document.getElementById("clock").textContent = `${days[Math.floor(simMin / 1440) % 7]} · ${clockStr()}`;
-    document.getElementById("sRev").textContent = fmt(econ.rev);
-    document.getElementById("sExp").textContent = fmt(econ.exp);
-    document.getElementById("sOrd").textContent = pending.size;
+    if (realMode) {
+      F("lRev").textContent = "Produits suivis"; F("sRev").textContent = products.length;
+      F("lExp").textContent = "Sous le seuil"; F("sExp").textContent = products.filter(p => p.qty <= p.min).length;
+      F("lOrd").textContent = "Bons de commande préparés"; F("sOrd").textContent = bons;
+    } else {
+      F("lRev").textContent = "Chiffre d'affaires"; F("sRev").textContent = fmt(econ.rev);
+      F("lExp").textContent = "Achats fournisseurs"; F("sExp").textContent = fmt(econ.exp);
+      F("lOrd").textContent = "Commandes en cours"; F("sOrd").textContent = pending.size;
+    }
     document.getElementById("sConv").textContent = econ.convs;
     document.getElementById("aDoing").textContent = selected.activity;
     for (const c of deptEl.children) { const list = deptAgents(c.dataset.id); c.querySelector("[data-n]").textContent = `${list.filter(atPost).length}/${list.length} au poste · ${list.map(a => a.name).join(", ")}`; }
