@@ -1,0 +1,647 @@
+<title>J.A.R.V.I.S.</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: écran unique façon HUD — barre, réacteur, onglets (Jarvis / Stock / Agenda), zone de saisie collée en bas. Thème sombre assumé. */
+:root {
+  --bg: #04101c; --bg2: #08192b; --panel: #0b2238; --line: #17496a; --line-soft: #10324d;
+  --accent: #19d8ff; --accent-2: #8beeff; --text: #d8f5ff; --muted: #7ea3b6;
+  --ok: #3dffa8; --warn: #ffb547; --danger: #ff6474;
+  --display: "Orbitron", "Rajdhani", system-ui, sans-serif;
+  --body: "Rajdhani", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body {
+  background: radial-gradient(120% 70% at 50% 0%, var(--bg2) 0%, var(--bg) 70%);
+  color: var(--text); font-family: var(--body); font-size: 17px; line-height: 1.4;
+  overflow: hidden;
+}
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.app {
+  height: 100%; display: flex; flex-direction: column; max-width: 760px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+header { display: flex; align-items: center; gap: 10px; padding-block: 10px 6px; }
+.brand { font-family: var(--display); font-weight: 700; letter-spacing: 4px; color: var(--accent); text-shadow: 0 0 14px rgba(25,216,255,.5); flex: 1; font-size: 17px; }
+.brand small { display: block; font-family: var(--body); letter-spacing: 1.5px; font-size: 11px; color: var(--muted); font-weight: 500; text-shadow: none; }
+.pill { font-size: 13px; border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; color: var(--muted); display: flex; gap: 6px; align-items: center; white-space: nowrap; }
+.pill i { width: 8px; height: 8px; border-radius: 50%; background: var(--warn); box-shadow: 0 0 8px var(--warn); }
+.pill.on i { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+.icon-btn { background: transparent; border: 1px solid var(--line); border-radius: 10px; width: 38px; height: 38px; display: grid; place-items: center; }
+
+/* Réacteur */
+.hud { display: flex; align-items: center; gap: 16px; padding-block: 4px 8px; }
+.reactor { position: relative; width: 88px; height: 88px; flex-shrink: 0; border: 0; padding: 0; border-radius: 50%; background: transparent; }
+.reactor span { position: absolute; border-radius: 50%; inset: 0; }
+.reactor .r1 { border: 2px dashed var(--accent); opacity: .55; animation: spin 16s linear infinite; }
+.reactor .r2 { inset: 10px; border: 3px solid transparent; border-top-color: var(--accent); border-bottom-color: var(--accent); animation: spin 5s linear infinite reverse; }
+.reactor .core { inset: 26px; background: radial-gradient(circle, #fff 0%, var(--accent-2) 35%, rgba(25,216,255,.08) 72%); box-shadow: 0 0 28px var(--accent); animation: pulse 3s ease-in-out infinite; }
+.reactor.listening .r1, .reactor.listening .r2 { border-color: var(--ok); border-left-color: transparent; border-right-color: transparent; }
+.reactor.listening .r1 { border-color: var(--ok); }
+.reactor.listening .core, .reactor.speaking .core { animation-duration: .6s; }
+.reactor.thinking .r2 { animation-duration: 1s; }
+.reactor.thinking .r1 { animation-duration: 3s; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes pulse { 50% { transform: scale(.86); opacity: .8; } }
+@media (prefers-reduced-motion: reduce) { .reactor span { animation: none !important; } }
+.hud-info { min-width: 0; flex: 1; }
+.state { font-family: var(--display); font-size: 12px; letter-spacing: 3px; text-transform: uppercase; color: var(--accent); }
+.clock { font-family: var(--display); font-size: 26px; color: var(--accent-2); font-variant-numeric: tabular-nums; }
+.date { color: var(--muted); font-size: 14px; }
+.kpis { display: flex; gap: 14px; font-size: 13px; color: var(--muted); margin-top: 2px; flex-wrap: wrap; }
+.kpis b { color: var(--text); font-variant-numeric: tabular-nums; }
+.kpis .alert b { color: var(--warn); }
+
+/* Onglets */
+nav { display: flex; gap: 4px; border-bottom: 1px solid var(--line-soft); }
+nav button { flex: 1; background: none; border: 0; border-bottom: 2px solid transparent; padding: 8px 4px; font-family: var(--display); font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); }
+nav button[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
+nav .badge { background: var(--warn); color: #1a0e00; border-radius: 999px; padding: 0 6px; font-family: var(--body); font-weight: 700; letter-spacing: 0; margin-left: 4px; }
+
+main { flex: 1; min-height: 0; overflow-y: auto; padding-block: 12px; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+section[hidden] { display: none; }
+
+/* Conversation */
+#log { display: flex; flex-direction: column; gap: 10px; }
+.msg { max-width: 88%; padding: 9px 13px; border-radius: 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.msg.me { align-self: flex-end; background: rgba(25,216,255,.13); border: 1px solid var(--line); border-bottom-right-radius: 4px; }
+.msg.ai { align-self: flex-start; background: var(--panel); border: 1px solid var(--line-soft); border-left: 3px solid var(--accent); border-bottom-left-radius: 4px; }
+.msg.sys { align-self: center; background: none; color: var(--warn); font-size: 14px; text-align: center; padding: 2px; }
+.msg.err { align-self: center; color: var(--danger); font-size: 14px; text-align: center; }
+.msg .chips { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 4px; }
+.msg .chips:empty { display: none; }
+.chip { font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--accent); border: 1px solid var(--line); border-radius: 999px; padding: 0 8px; }
+.msg .acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.msg .acts:empty { display: none; }
+.act { background: transparent; border: 1px solid var(--accent); color: var(--accent); border-radius: 10px; padding: 5px 12px; text-decoration: none; font-weight: 600; font-size: 15px; }
+.act.danger { border-color: var(--danger); color: var(--danger); }
+.thinking { color: var(--muted); }
+.thinking::after { content: "▋"; color: var(--accent); animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.suggest { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.suggest button { background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; color: var(--muted); font-size: 15px; text-align: left; }
+
+/* Stock & agenda */
+.toolbar { display: flex; gap: 8px; margin-bottom: 10px; }
+.toolbar input { flex: 1; min-width: 0; background: var(--panel); border: 1px solid var(--line-soft); border-radius: 10px; padding: 8px 12px; }
+.cards { display: grid; gap: 8px; }
+.card { background: var(--panel); border: 1px solid var(--line-soft); border-radius: 12px; padding: 10px 12px; display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; align-items: center; }
+.card .name { font-weight: 600; font-size: 17px; min-width: 0; overflow-wrap: anywhere; }
+.card .meta { color: var(--muted); font-size: 13px; grid-column: 1; }
+.card .qty { grid-row: 1 / span 2; grid-column: 2; text-align: right; font-family: var(--display); font-size: 20px; color: var(--accent-2); font-variant-numeric: tabular-nums; }
+.card .qty small { display: block; font-family: var(--body); font-size: 12px; color: var(--muted); }
+.card.low { border-color: rgba(255,181,71,.45); }
+.card.low .qty { color: var(--warn); }
+.card .row-actions { grid-column: 1 / -1; display: flex; gap: 6px; margin-top: 6px; }
+.card .row-actions button { background: transparent; border: 1px solid var(--line); border-radius: 8px; padding: 2px 12px; font-weight: 700; }
+h3 { font-family: var(--display); font-size: 12px; letter-spacing: 3px; text-transform: uppercase; color: var(--accent); margin: 14px 0 8px; font-weight: 500; }
+h3:first-child { margin-top: 0; }
+.empty { color: var(--muted); border: 1px dashed var(--line); border-radius: 12px; padding: 14px; font-size: 15px; }
+.item { display: flex; gap: 10px; align-items: flex-start; background: var(--panel); border: 1px solid var(--line-soft); border-radius: 12px; padding: 9px 12px; }
+.item + .item { margin-top: 6px; }
+.item .txt { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.item small { display: block; color: var(--muted); font-size: 13px; }
+.item.haute { border-left: 3px solid var(--danger); }
+.item button { background: transparent; border: 1px solid var(--line); border-radius: 8px; padding: 2px 9px; color: var(--muted); }
+.check { width: 22px; height: 22px; border-radius: 6px; border: 1px solid var(--accent) !important; padding: 0 !important; flex-shrink: 0; margin-top: 1px; }
+
+/* Saisie */
+footer { padding-block: 8px max(10px, env(safe-area-inset-bottom, 0px)); }
+.composer { display: flex; gap: 8px; align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 6px; }
+.composer input { flex: 1; min-width: 0; background: transparent; border: 0; padding: 8px; outline: none; font-size: 17px; }
+.mic { width: 46px; height: 46px; border-radius: 50%; border: 1px solid var(--line); background: transparent; font-size: 19px; flex-shrink: 0; }
+.mic.on { border-color: var(--ok); box-shadow: 0 0 16px var(--ok); animation: pulse 1s infinite; }
+.send { border: 0; border-radius: 12px; height: 46px; padding: 0 16px; background: var(--accent); color: #00131c; font-weight: 700; flex-shrink: 0; }
+.send.stop { background: var(--danger); }
+.opts { display: flex; justify-content: center; gap: 16px; font-size: 13px; color: var(--muted); margin-top: 6px; flex-wrap: wrap; }
+.opts label { display: flex; gap: 5px; align-items: center; }
+.opts input { accent-color: var(--accent); }
+</style>
+
+<div class="app">
+  <header>
+    <div class="brand">J.A.R.V.I.S.<small>Assistant personnel · Moriba</small></div>
+    <div class="pill" id="pill"><i></i><span id="pillText">Connexion…</span></div>
+    <button class="icon-btn" id="resetBtn" title="Nouvelle conversation" aria-label="Nouvelle conversation">↺</button>
+  </header>
+
+  <div class="hud">
+    <button class="reactor" id="reactor" aria-label="Parler à Jarvis"><span class="r1"></span><span class="r2"></span><span class="core"></span></button>
+    <div class="hud-info">
+      <div class="state" id="state">En veille</div>
+      <div class="clock" id="clock">--:--</div>
+      <div class="date" id="date"></div>
+      <div class="kpis">
+        <span><b id="kProducts">0</b> produits</span>
+        <span><b id="kValue">0</b> valeur stock</span>
+        <span class="alert" id="kLowWrap" hidden><b id="kLow">0</b> en alerte</span>
+      </div>
+    </div>
+  </div>
+
+  <nav role="tablist">
+    <button role="tab" aria-selected="true" data-tab="chat" id="tab-chat">Jarvis</button>
+    <button role="tab" aria-selected="false" data-tab="stock" id="tab-stock">Stock<span class="badge" id="lowBadge" hidden></span></button>
+    <button role="tab" aria-selected="false" data-tab="agenda" id="tab-agenda">Agenda</button>
+  </nav>
+
+  <main id="main">
+    <section id="view-chat">
+      <div id="log"></div>
+    </section>
+
+    <section id="view-stock" hidden>
+      <div class="toolbar"><input id="stockSearch" placeholder="Rechercher un produit…" autocomplete="off"></div>
+      <div class="cards" id="stockList"></div>
+      <h3>Derniers mouvements</h3>
+      <div id="moves"></div>
+    </section>
+
+    <section id="view-agenda" hidden>
+      <h3>Minuteurs</h3><div id="timers"></div>
+      <h3>Rappels</h3><div id="reminders"></div>
+      <h3>Tâches</h3><div id="todos"></div>
+      <h3>Notes</h3><div id="notes"></div>
+      <h3>Ce que Jarvis retient de vous</h3><div id="memory"></div>
+    </section>
+  </main>
+
+  <footer>
+    <form class="composer" id="form" autocomplete="off">
+      <button type="button" class="mic" id="micBtn" aria-label="Dicter" hidden>🎙</button>
+      <input id="input" placeholder="Parlez ou écrivez à Jarvis…" enterkeyhint="send">
+      <button type="submit" class="send" id="sendBtn">Envoyer</button>
+    </form>
+    <div class="opts">
+      <label><input type="checkbox" id="ttsToggle" checked> Réponse vocale</label>
+      <label><input type="checkbox" id="handsfree"> Conversation continue</label>
+    </div>
+  </footer>
+</div>
+
+<script>
+"use strict";
+const $ = (s) => document.querySelector(s);
+const ls = {
+  get(k, d) { try { const v = localStorage.getItem("jarvis." + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem("jarvis." + k, JSON.stringify(v)); } catch {} },
+};
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const norm = (s) => String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+const fmt = (n) => Number(n || 0).toLocaleString("fr-FR");
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
+// ================== État ==================
+const S = { products: [], todos: [], notes: [], reminders: [], memory: [], moves: [] };
+let db = null, sample = null, tts = null, dict = null;
+const BASE = "jarvis/main";
+const col = (name) => db.collection(BASE + "/" + name);
+const strip = (o) => JSON.parse(JSON.stringify(o));
+
+// Stockage : base partagée de l'artefact si disponible, sinon navigateur (local).
+async function put(name, item) {
+  const list = S[name], i = list.findIndex((x) => x.id === item.id);
+  if (i >= 0) list[i] = item; else list.push(item);
+  if (db) await col(name).doc(item.id).set(strip(item));
+  else ls.set("data." + name, list);
+  renderAll();
+}
+async function del(name, id) {
+  S[name] = S[name].filter((x) => x.id !== id);
+  if (db) await col(name).doc(id).delete();
+  else ls.set("data." + name, S[name]);
+  renderAll();
+}
+
+// ================== UI : état, horloge ==================
+const LABELS = { idle: "En veille", listening: "À l'écoute", thinking: "Analyse…", speaking: "Réponse" };
+function setState(s) { $("#reactor").className = "reactor " + s; $("#state").textContent = LABELS[s]; }
+function tick() {
+  const d = new Date();
+  $("#clock").textContent = d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  $("#date").textContent = d.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+}
+tick(); setInterval(tick, 10000);
+
+// Onglets
+document.querySelectorAll("nav button").forEach((b) => b.onclick = () => showTab(b.dataset.tab));
+function showTab(t) {
+  document.querySelectorAll("nav button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.tab === t)));
+  for (const v of ["chat", "stock", "agenda"]) $("#view-" + v).hidden = v !== t;
+  ls.set("tab", t);
+  if (t === "chat") scrollLog();
+}
+
+// ================== Rendu ==================
+const isLow = (p) => Number(p.quantity) <= Number(p.min_stock ?? 5);
+function renderAll() {
+  const low = S.products.filter(isLow);
+  $("#kProducts").textContent = fmt(S.products.length);
+  $("#kValue").textContent = fmt(Math.round(S.products.reduce((s, p) => s + p.quantity * (p.price || 0), 0)));
+  $("#kLow").textContent = low.length; $("#kLowWrap").hidden = !low.length;
+  $("#lowBadge").textContent = low.length; $("#lowBadge").hidden = !low.length;
+
+  const q = norm($("#stockSearch").value);
+  const prods = S.products.filter((p) => !q || norm([p.name, p.category, p.sku].join(" ")).includes(q))
+    .sort((a, b) => (isLow(b) - isLow(a)) || a.name.localeCompare(b.name));
+  $("#stockList").innerHTML = prods.length ? prods.map((p) => `
+    <div class="card ${isLow(p) ? "low" : ""}">
+      <div class="name">${esc(p.name)}</div>
+      <div class="qty">${fmt(p.quantity)}<small>${esc(p.unit || "pièce")}</small></div>
+      <div class="meta">${esc(p.category || "Général")}${p.price ? " · " + fmt(p.price) + " / u" : ""} · seuil ${p.min_stock ?? 5}${isLow(p) ? " · ⚠ stock bas" : ""}</div>
+      <div class="row-actions"><button data-move="out" data-id="${p.id}" aria-label="Sortie d'une unité">−1</button><button data-move="in" data-id="${p.id}" aria-label="Entrée d'une unité">+1</button></div>
+    </div>`).join("")
+    : `<div class="empty">${S.products.length ? "Aucun produit ne correspond." : "Inventaire vide. Dites par exemple : « Ajoute 50 sacs de riz à 250 000 l'unité, seuil 10 »."}</div>`;
+
+  const moves = [...S.moves].sort((a, b) => b.at.localeCompare(a.at)).slice(0, 12);
+  $("#moves").innerHTML = moves.length ? moves.map((m) => `<div class="item"><div class="txt">${m.type === "in" ? "▲ Entrée" : "▼ Sortie"} · ${esc(m.product)} · ${fmt(m.quantity)}<small>${esc(m.reason || "")} — ${new Date(m.at).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" })}</small></div></div>`).join("")
+    : `<div class="empty">Aucun mouvement pour l'instant.</div>`;
+
+  const todos = S.todos.filter((t) => !t.done).sort((a, b) => (b.priority === "haute") - (a.priority === "haute"));
+  $("#todos").innerHTML = todos.length ? todos.map((t) => `<div class="item ${t.priority === "haute" ? "haute" : ""}"><button class="check" data-done="${t.id}" aria-label="Marquer comme faite"></button><div class="txt">${esc(t.text)}${t.due ? `<small>Échéance : ${new Date(t.due).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" })}</small>` : ""}</div></div>`).join("")
+    : `<div class="empty">Aucune tâche. « Ajoute la tâche appeler le fournisseur, priorité haute ».</div>`;
+
+  const rem = S.reminders.filter((r) => !r.fired).sort((a, b) => a.at.localeCompare(b.at));
+  $("#reminders").innerHTML = rem.length ? rem.map((r) => `<div class="item"><div class="txt">${esc(r.text)}<small>${new Date(r.at).toLocaleString("fr-FR", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</small></div><button data-cancel="${r.id}" aria-label="Annuler le rappel">✕</button></div>`).join("")
+    : `<div class="empty">Aucun rappel. « Rappelle-moi dans 20 minutes de fermer la boutique ».</div>`;
+
+  const notes = [...S.notes].sort((a, b) => b.at.localeCompare(a.at));
+  $("#notes").innerHTML = notes.length ? notes.map((n) => `<div class="item"><div class="txt">${esc(n.text)}<small>${new Date(n.at).toLocaleDateString("fr-FR")}</small></div><button data-delnote="${n.id}" aria-label="Supprimer la note">✕</button></div>`).join("")
+    : `<div class="empty">Aucune note. « Note : code du portail 4512 ».</div>`;
+
+  $("#memory").innerHTML = S.memory.length ? S.memory.map((m) => `<div class="item"><div class="txt">${esc(m.fact)}</div><button data-forget="${m.id}" aria-label="Oublier">✕</button></div>`).join("")
+    : `<div class="empty">Rien pour l'instant. « Retiens que mon fournisseur s'appelle Bah Import ».</div>`;
+  renderTimers();
+}
+$("#stockSearch").oninput = renderAll;
+document.addEventListener("click", async (e) => {
+  const t = e.target.closest("button"); if (!t) return;
+  if (t.dataset.move) { try { await T.stock_move.run({ product: t.dataset.id, type: t.dataset.move, quantity: 1, reason: "ajustement manuel" }); } catch (err) { sysMsg(err.message, "err"); } }
+  if (t.dataset.done) { const td = S.todos.find((x) => x.id === t.dataset.done); if (td) await put("todos", { ...td, done: true, done_at: new Date().toISOString() }); }
+  if (t.dataset.cancel) await del("reminders", t.dataset.cancel);
+  if (t.dataset.delnote) await del("notes", t.dataset.delnote);
+  if (t.dataset.forget) await del("memory", t.dataset.forget);
+});
+
+// ================== Outils de Jarvis ==================
+function findProduct(q) {
+  const n = norm(q);
+  return S.products.find((p) => p.id === q || (p.sku && norm(p.sku) === n)) || S.products.find((p) => norm(p.name) === n)
+    || S.products.find((p) => norm(p.name).includes(n)) || S.products.find((p) => n.includes(norm(p.name)));
+}
+function evaluate(expr) {
+  const src = String(expr).replace(/,/g, ".").replace(/×/g, "*").replace(/÷/g, "/").replace(/\s+/g, "").toLowerCase();
+  let i = 0;
+  const F = { sqrt: Math.sqrt, abs: Math.abs, round: Math.round, ln: Math.log, log: Math.log10, sin: Math.sin, cos: Math.cos, tan: Math.tan, exp: Math.exp };
+  const peek = () => src[i];
+  function num() { const m = /^(\d+\.?\d*|\.\d+)(e[+-]?\d+)?/.exec(src.slice(i)); if (!m) throw new Error("Expression invalide"); i += m[0].length; return Number(m[0]); }
+  function prim() {
+    if (peek() === "(") { i++; const v = add(); if (src[i++] !== ")") throw new Error("Parenthèse manquante"); return v; }
+    const m = /^[a-z]+/.exec(src.slice(i));
+    if (m) { i += m[0].length; if (m[0] === "pi") return Math.PI; if (m[0] === "e") return Math.E; if (!F[m[0]] || src[i] !== "(") throw new Error("Inconnu : " + m[0]); i++; const v = add(); if (src[i++] !== ")") throw new Error("Parenthèse manquante"); return F[m[0]](v); }
+    return num();
+  }
+  function pow() { const b = prim(); if (peek() === "^") { i++; return Math.pow(b, un()); } return b; }
+  function un() { if (peek() === "-") { i++; return -un(); } if (peek() === "+") { i++; return un(); } return pow(); }
+  function mul() { let v = un(); while ("*/%".includes(peek() || "x")) { const o = src[i++], r = un(); if (o === "/" && r === 0) throw new Error("Division par zéro"); v = o === "*" ? v * r : o === "/" ? v / r : v % r; } return v; }
+  function add() { let v = mul(); while (peek() === "+" || peek() === "-") { const o = src[i++], r = mul(); v = o === "+" ? v + r : v - r; } return v; }
+  const v = add(); if (i !== src.length) throw new Error("Expression mal formée"); return Math.round(v * 1e10) / 1e10;
+}
+
+let pendingActs = null; // boutons à afficher sous la réponse en cours
+const T = {
+  get_datetime: { d: "Date et heure actuelles de l'utilisateur.", s: {}, run: () => ({ local: new Date().toLocaleString("fr-FR", { dateStyle: "full", timeStyle: "short" }), iso: new Date().toISOString() }) },
+  calculate: { d: "Calcule exactement une expression (+ - * / % ^, sqrt, pi…). Utilise-le pour tout calcul chiffré. Renvoie le résultat.", s: { expression: { type: "string" } }, req: ["expression"],
+    run: ({ expression }) => ({ expression, result: evaluate(expression) }) },
+  stock_list: { d: "Liste les produits du stock (filtre texte optionnel, low_only pour les stocks bas). Renvoie nom, quantité, prix, seuil.", s: { search: { type: "string" }, low_only: { type: "boolean" } },
+    run: ({ search, low_only }) => {
+      let l = S.products; if (search) l = l.filter((p) => norm([p.name, p.category, p.sku].join(" ")).includes(norm(search))); if (low_only) l = l.filter(isLow);
+      return { count: l.length, products: l.slice(0, 60).map((p) => ({ id: p.id, name: p.name, qty: p.quantity, unit: p.unit, price: p.price, min: p.min_stock, category: p.category, low: isLow(p) })) };
+    } },
+  stock_add_product: { d: "Crée un nouveau produit (nom, quantité initiale, prix de vente, coût, catégorie, unité, seuil d'alerte min_stock défaut 5).",
+    s: { name: { type: "string" }, quantity: { type: "number" }, price: { type: "number" }, cost: { type: "number" }, category: { type: "string" }, unit: { type: "string" }, min_stock: { type: "number" }, sku: { type: "string" } }, req: ["name", "quantity"],
+    run: async (a) => {
+      const name = String(a.name || "").trim(); const qty = Number(a.quantity);
+      if (!name) throw new Error("Nom requis"); if (!(qty >= 0)) throw new Error("Quantité invalide");
+      const ex = S.products.find((p) => norm(p.name) === norm(name)); if (ex) throw new Error(`« ${ex.name} » existe déjà (${ex.quantity}). Utilise stock_move.`);
+      const p = { id: uid(), name, quantity: qty, price: Number(a.price) || 0, cost: Number(a.cost) || 0, category: a.category ? String(a.category) : "Général", unit: a.unit ? String(a.unit) : "pièce", min_stock: a.min_stock != null ? Number(a.min_stock) : 5, sku: a.sku ? String(a.sku) : "", created_at: new Date().toISOString() };
+      await put("products", p);
+      await put("moves", { id: uid(), product_id: p.id, product: p.name, type: "in", quantity: qty, reason: "stock initial", at: p.created_at, unit_price: p.price });
+      return { ok: true, product: p.name, quantity: qty };
+    } },
+  stock_move: { d: "Entrée (type 'in' : réception) ou sortie (type 'out' : vente, perte) de stock pour un produit existant. Renvoie la nouvelle quantité et une alerte si stock bas.",
+    s: { product: { type: "string", description: "nom ou id" }, type: { type: "string", enum: ["in", "out"] }, quantity: { type: "number" }, reason: { type: "string" } }, req: ["product", "type", "quantity"],
+    run: async ({ product, type, quantity, reason }) => {
+      const p = findProduct(String(product)); const q = Number(quantity);
+      if (!p) throw new Error("Produit introuvable : " + product); if (!(q > 0)) throw new Error("Quantité invalide");
+      if (type !== "in" && type !== "out") throw new Error("type doit être in ou out");
+      if (type === "out" && q > p.quantity) throw new Error(`Stock insuffisant : ${p.quantity} ${p.unit} de ${p.name}`);
+      const np = { ...p, quantity: p.quantity + (type === "in" ? q : -q) };
+      await put("products", np);
+      await put("moves", { id: uid(), product_id: p.id, product: p.name, type, quantity: q, reason: reason ? String(reason) : (type === "in" ? "entrée" : "vente"), at: new Date().toISOString(), unit_price: p.price });
+      return { ok: true, product: p.name, new_quantity: np.quantity, unit: p.unit, low_stock_alert: isLow(np) };
+    } },
+  stock_update_product: { d: "Modifie un produit : name, price, cost, min_stock, category, unit, sku.", s: { product: { type: "string" }, name: { type: "string" }, price: { type: "number" }, cost: { type: "number" }, min_stock: { type: "number" }, category: { type: "string" }, unit: { type: "string" }, sku: { type: "string" } }, req: ["product"],
+    run: async (a) => {
+      const p = findProduct(String(a.product)); if (!p) throw new Error("Produit introuvable : " + a.product);
+      const np = { ...p }; for (const k of ["name", "category", "unit", "sku"]) if (a[k] != null) np[k] = String(a[k]); for (const k of ["price", "cost", "min_stock"]) if (a[k] != null) np[k] = Number(a[k]);
+      await put("products", np); return { ok: true, product: np };
+    } },
+  stock_delete_product: { d: "Propose la suppression d'un produit : affiche un bouton de confirmation à l'utilisateur (rien n'est supprimé sans son clic). Seulement sur demande explicite.", s: { product: { type: "string" } }, req: ["product"],
+    run: ({ product }) => {
+      const p = findProduct(String(product)); if (!p) throw new Error("Produit introuvable : " + product);
+      (pendingActs ||= []).push({ label: `Supprimer « ${p.name} »`, danger: true, fn: async () => { await del("products", p.id); sysMsg(`« ${p.name} » supprimé.`); } });
+      return { awaiting_user_confirmation: true, product: p.name, note: "Un bouton de confirmation est affiché à l'utilisateur." };
+    } },
+  stock_report: { d: "Rapport du stock : nombre de produits, unités, valeur (vente et coût), alertes, ventes et chiffre d'affaires estimé sur N jours (défaut 7).", s: { days: { type: "number" } },
+    run: ({ days }) => {
+      const d = Number(days) || 7, since = Date.now() - d * 864e5; const rec = S.moves.filter((m) => Date.parse(m.at) >= since); const out = rec.filter((m) => m.type === "out" && m.reason !== "ajustement manuel");
+      const by = {}; for (const m of out) by[m.product] = (by[m.product] || 0) + m.quantity;
+      return { products: S.products.length, units: S.products.reduce((s, p) => s + p.quantity, 0), value_sale: S.products.reduce((s, p) => s + p.quantity * (p.price || 0), 0), value_cost: S.products.reduce((s, p) => s + p.quantity * (p.cost || 0), 0),
+        low_stock: S.products.filter(isLow).map((p) => `${p.name} (${p.quantity}/${p.min_stock})`), days: d, units_sold: out.reduce((s, m) => s + m.quantity, 0), revenue: out.reduce((s, m) => s + m.quantity * (m.unit_price || 0), 0),
+        top_sellers: Object.entries(by).sort((a, b) => b[1] - a[1]).slice(0, 5) };
+    } },
+  todos: { d: "Tâches : action add (text, priority basse|normale|haute, due ISO), list, done (id ou texte), delete (id ou texte).", s: { action: { type: "string", enum: ["add", "list", "done", "delete"] }, text: { type: "string" }, id: { type: "string" }, priority: { type: "string" }, due: { type: "string" } }, req: ["action"],
+    run: async ({ action, text, id, priority, due }) => {
+      if (action === "add") { if (!text) throw new Error("text requis"); const t = { id: uid(), text: String(text), priority: priority || "normale", due: due || null, done: false, at: new Date().toISOString() }; await put("todos", t); return { ok: true, id: t.id }; }
+      if (action === "list") return { todos: S.todos.filter((t) => !t.done).map((t) => ({ id: t.id, text: t.text, priority: t.priority, due: t.due })) };
+      const key = String(id || text || ""); const t = S.todos.find((x) => x.id === key) || S.todos.find((x) => !x.done && norm(x.text).includes(norm(key)));
+      if (!t) throw new Error("Tâche introuvable : " + key);
+      if (action === "done") { await put("todos", { ...t, done: true, done_at: new Date().toISOString() }); return { ok: true, done: t.text }; }
+      if (action === "delete") { await del("todos", t.id); return { ok: true, deleted: t.text }; }
+      throw new Error("action inconnue");
+    } },
+  notes: { d: "Notes : action add (text), list, search (text), delete (id).", s: { action: { type: "string", enum: ["add", "list", "search", "delete"] }, text: { type: "string" }, id: { type: "string" } }, req: ["action"],
+    run: async ({ action, text, id }) => {
+      if (action === "add") { if (!text) throw new Error("text requis"); await put("notes", { id: uid(), text: String(text), at: new Date().toISOString() }); return { ok: true }; }
+      if (action === "list") return { notes: S.notes.slice(-30) };
+      if (action === "search") return { notes: S.notes.filter((n) => norm(n.text).includes(norm(text))) };
+      if (action === "delete") { if (!S.notes.some((n) => n.id === id)) throw new Error("Note introuvable"); await del("notes", String(id)); return { ok: true }; }
+      throw new Error("action inconnue");
+    } },
+  reminders: { d: "Rappels (alerte sonore et vocale tant que la page est ouverte) : action add (text + in_minutes OU at en ISO 8601 avec fuseau), list, cancel (id).", s: { action: { type: "string", enum: ["add", "list", "cancel"] }, text: { type: "string" }, in_minutes: { type: "number" }, at: { type: "string" }, id: { type: "string" } }, req: ["action"],
+    run: async ({ action, text, in_minutes, at, id }) => {
+      if (action === "add") {
+        const when = in_minutes != null ? Date.now() + Number(in_minutes) * 60000 : Date.parse(at);
+        if (!text || !when || isNaN(when)) throw new Error("text et in_minutes ou at requis"); if (when < Date.now() - 60000) throw new Error("Heure déjà passée");
+        const r = { id: uid(), text: String(text), at: new Date(when).toISOString(), fired: false }; await put("reminders", r);
+        return { ok: true, local: new Date(when).toLocaleString("fr-FR", { dateStyle: "full", timeStyle: "short" }) };
+      }
+      if (action === "list") return { reminders: S.reminders.filter((r) => !r.fired) };
+      if (action === "cancel") { await del("reminders", String(id)); return { ok: true }; }
+      throw new Error("action inconnue");
+    } },
+  memory: { d: "Mémoire à long terme : remember (fact), forget (id). Enregistre ce que l'utilisateur veut que tu retiennes.", s: { action: { type: "string", enum: ["remember", "forget"] }, fact: { type: "string" }, id: { type: "string" } }, req: ["action"],
+    run: async ({ action, fact, id }) => {
+      if (action === "remember") { if (!fact) throw new Error("fact requis"); await put("memory", { id: uid(), fact: String(fact), at: new Date().toISOString() }); return { ok: true }; }
+      if (action === "forget") { await del("memory", String(id)); return { ok: true }; }
+      throw new Error("action inconnue");
+    } },
+  timer: { d: "Lance un minuteur dans la page (seconds, label optionnel).", s: { seconds: { type: "number" }, label: { type: "string" } }, req: ["seconds"],
+    run: ({ seconds, label }) => { const s = Number(seconds); if (!(s > 0)) throw new Error("Durée invalide"); startTimer(s, label); return { ok: true, seconds: s }; } },
+  open_link: { d: "Affiche un bouton pour ouvrir un lien : kind youtube|google|maps|url avec value (requête ou URL). Pour la musique, une recherche, un itinéraire, un site, la météo en direct.", s: { kind: { type: "string", enum: ["youtube", "google", "maps", "url"] }, value: { type: "string" }, label: { type: "string" } }, req: ["kind", "value"],
+    run: ({ kind, value, label }) => { const l = makeLink(String(kind), String(value), label); (pendingActs ||= []).push(l); return { ok: true, shown: l.label }; } },
+};
+function makeLink(kind, value, label) {
+  const e = encodeURIComponent(value);
+  const href = kind === "youtube" ? "https://www.youtube.com/results?search_query=" + e : kind === "google" ? "https://www.google.com/search?q=" + e
+    : kind === "maps" ? "https://www.google.com/maps/search/" + e : (/^https?:\/\//.test(value) ? value : "https://" + value);
+  const def = { youtube: "▶ YouTube : ", google: "🔎 Google : ", maps: "📍 Maps : ", url: "↗ " }[kind] || "↗ ";
+  return { label: label || def + value, href };
+}
+const TOOL_LABELS = { get_datetime: "heure", calculate: "calcul", stock_list: "stock", stock_add_product: "nouveau produit", stock_move: "mouvement", stock_update_product: "maj produit", stock_delete_product: "suppression", stock_report: "rapport", todos: "tâches", notes: "notes", reminders: "rappel", memory: "mémoire", timer: "minuteur", open_link: "lien" };
+
+// ================== Conversation ==================
+let turns = ls.get("turns", []);
+let busy = false, ctl = null;
+const log = $("#log");
+const scrollLog = () => { const m = $("#main"); m.scrollTop = m.scrollHeight; };
+function sysMsg(t, kind = "sys") { const d = document.createElement("div"); d.className = "msg " + kind; d.textContent = t; log.appendChild(d); scrollLog(); }
+function bubble(kind, text = "") {
+  const d = document.createElement("div"); d.className = "msg " + kind;
+  if (kind === "ai") d.innerHTML = `<div class="chips"></div><div class="body"></div><div class="acts"></div>`; else d.textContent = text;
+  log.appendChild(d); scrollLog(); return d;
+}
+function md(t) { return esc(t).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>"); }
+function renderActs(el, acts) {
+  const box = el.querySelector(".acts");
+  for (const a of acts) {
+    if (a.href) { const x = document.createElement("a"); x.className = "act"; x.href = a.href; x.target = "_blank"; x.rel = "noopener"; x.textContent = a.label; box.appendChild(x); }
+    else { const b = document.createElement("button"); b.className = "act" + (a.danger ? " danger" : ""); b.textContent = a.label; b.onclick = async () => { b.disabled = true; try { await a.fn(); } catch (e) { sysMsg(e.message, "err"); } }; box.appendChild(b); }
+  }
+}
+
+function instructions() {
+  const now = new Date().toLocaleString("fr-FR", { dateStyle: "full", timeStyle: "short" });
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const low = S.products.filter(isLow).map((p) => p.name);
+  return `Tu es J.A.R.V.I.S., l'assistant personnel de l'utilisateur (gérant de commerce, projet Moriba Stock Manager), élégant, efficace, une pointe d'humour pince-sans-rire.
+Réponds en français (ou dans la langue de l'utilisateur), en le vouvoyant, en 1 à 3 phrases courtes : tes réponses sont lues à voix haute. Pas de tableaux ni de markdown lourd.
+Utilise tes outils pour toute action ou donnée (stock, tâches, notes, rappels, mémoire, calcul, minuteur, liens). N'invente jamais une quantité ou un chiffre : appelle l'outil. Pour tout calcul, utilise calculate.
+Après un mouvement de stock, donne la nouvelle quantité et signale un stock bas. Si une info manque (quantité, produit), demande-la brièvement.
+Tu n'as pas accès à Internet : pour l'actualité, la météo en direct ou une musique, propose un lien avec open_link.
+Contexte : ${now} (fuseau ${tz}). Stock : ${S.products.length} produits${low.length ? ", en alerte : " + low.slice(0, 10).join(", ") : ""}. Tâches ouvertes : ${S.todos.filter((t) => !t.done).length}.
+${S.memory.length ? "Ce que tu sais de l'utilisateur : " + S.memory.map((m) => m.fact).join(" ; ") : ""}`;
+}
+
+async function ask(text) {
+  text = text.trim(); if (!text || busy) return;
+  busy = true; stopSpeech(); showTab("chat");
+  document.querySelector(".suggest")?.remove();
+  bubble("me", text);
+  const el = bubble("ai"); const body = el.querySelector(".body"), chips = el.querySelector(".chips");
+  body.className = "body thinking"; body.textContent = "Analyse en cours";
+  setState("thinking"); setBusyUI(true);
+  pendingActs = null;
+  let answer = "";
+  try {
+    if (sample) {
+      turns.push({ role: "user", content: text });
+      ctl = new AbortController();
+      const tools = Object.entries(T).map(([name, t]) => ({
+        name, description: t.d, inputSchema: { type: "object", properties: t.s, required: t.req || [] },
+        execute: async (input) => { const c = document.createElement("span"); c.className = "chip"; c.textContent = TOOL_LABELS[name] || name; chips.appendChild(c); scrollLog(); return await t.run(input || {}); },
+      }));
+      const res = await sample([{ role: "user", content: instructions() }, ...turns.slice(-16)], {
+        modelTier: "quick", signal: ctl.signal, tools,
+        onText: ({ text: t }) => { body.className = "body"; body.innerHTML = md(t); scrollLog(); },
+      });
+      answer = res.text;
+      turns.push({ role: "assistant", content: answer });
+      turns = turns.slice(-24); ls.set("turns", turns);
+    } else {
+      answer = await offline(text);
+    }
+    body.className = "body"; body.innerHTML = md(answer);
+  } catch (e) {
+    turns.pop(); // retire le message utilisateur sans réponse
+    body.className = "body";
+    if (e && e.code === "cancelled") { body.textContent = e.text || "Interrompu."; }
+    else if (e && (e.code === "not_granted" || e.code === "sampling_disabled" || e.code === "tools_unavailable")) {
+      sample = null; updatePill();
+      sysMsg("Intelligence Claude non autorisée sur cette page : je passe en mode commandes simples.");
+      answer = await offline(text); body.innerHTML = md(answer);
+    } else if (e && e.code === "rate_limited") { body.textContent = e.text || ""; sysMsg("Je suis momentanément saturé. Réessayez dans un instant.", "err"); }
+    else if (e && e.code === "refused") { body.textContent = "Je ne peux pas donner suite à cette demande."; }
+    else { body.textContent = (e && e.text) || ""; sysMsg("Incident technique (" + ((e && (e.code || e.message)) || "inconnu") + "). Réessayez.", "err"); }
+    if (!body.textContent.trim()) el.remove();
+  }
+  if (pendingActs) renderActs(el, pendingActs);
+  pendingActs = null; ctl = null; busy = false; setBusyUI(false);
+  scrollLog();
+  if (answer) speak(answer, () => { if ($("#handsfree").checked && dict) startDictation(); });
+  else setState("idle");
+}
+function setBusyUI(b) { const s = $("#sendBtn"); s.textContent = b ? "Stop" : "Envoyer"; s.classList.toggle("stop", b); }
+$("#form").onsubmit = (e) => { e.preventDefault(); if (busy) { ctl?.abort(); return; } const v = $("#input").value; $("#input").value = ""; ask(v); };
+$("#resetBtn").onclick = () => { turns = []; ls.set("turns", []); log.innerHTML = ""; stopSpeech(); greet(); };
+
+// ================== Mode commandes simples (sans Claude) ==================
+async function offline(text) {
+  const t = norm(text); let m;
+  const run = async (n, a) => T[n].run(a);
+  try {
+    if (/^(bonjour|salut|hello|bonsoir|coucou)/.test(t)) return "Bonjour. Tous les systèmes sont opérationnels.";
+    if (/heure/.test(t)) return "Il est " + new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }) + ".";
+    if (/\b(date|quel jour)\b/.test(t)) return "Nous sommes le " + new Date().toLocaleDateString("fr-FR", { dateStyle: "full" }) + ".";
+    if ((m = t.match(/^(?:calcule|combien font|combien fait)\s+(.+)$/))) return "Résultat : " + fmt(evaluate(m[1].replace(/fois/g, "*").replace(/plus/g, "+").replace(/moins/g, "-").replace(/divise par/g, "/").replace(/\?/g, ""))) + ".";
+    if ((m = text.match(/^\s*(?:note|prends note)\s*:?\s*(.+)$/i))) { await run("notes", { action: "add", text: m[1] }); return "Note enregistrée."; }
+    if ((m = text.match(/^\s*(?:ajoute(?:r)? (?:la )?t[aâ]che|nouvelle t[aâ]che)\s*:?\s*(.+)$/i))) { await run("todos", { action: "add", text: m[1] }); return "Tâche ajoutée."; }
+    if ((m = t.match(/rappel(?:le)?[- ]?moi dans (\d+(?:[.,]\d+)?) ?(minutes?|min|heures?|h)\b(?: de | d'| que | :)?\s*(.*)/))) { const r = await run("reminders", { action: "add", text: m[3] || "Rappel", in_minutes: parseFloat(m[1].replace(",", ".")) * (m[2][0] === "h" ? 60 : 1) }); return "Entendu, rappel programmé : " + r.local + "."; }
+    if ((m = t.match(/(?:minuteur|timer)(?: de)? (\d+(?:[.,]\d+)?) ?(minutes?|min|secondes?|s|heures?|h)/))) { const u = m[2][0]; startTimer(parseFloat(m[1].replace(",", ".")) * (u === "h" ? 3600 : u === "m" ? 60 : 1)); return "Minuteur lancé."; }
+    if ((m = t.match(/(?:ajoute|recu|reception)\s+(\d+(?:[.,]\d+)?)\s+(?:\S+ de |\S+ d')?(.+?)(?: au stock| en stock)$/))) {
+      const q = parseFloat(m[1].replace(",", ".")); if (findProduct(m[2])) { const r = await run("stock_move", { product: m[2], type: "in", quantity: q, reason: "réception" }); return `${r.product} : ${fmt(r.new_quantity)} en stock.`; }
+      await run("stock_add_product", { name: m[2], quantity: q }); return `Produit « ${m[2]} » créé avec ${fmt(q)} unités.`;
+    }
+    if ((m = t.match(/(?:vends|vendu|sortie de|retire)\s+(\d+(?:[.,]\d+)?)\s+(?:\S+ de |\S+ d')?(.+?)$/))) { const r = await run("stock_move", { product: m[2], type: "out", quantity: parseFloat(m[1].replace(",", ".")), reason: "vente" }); return `${r.product} : il reste ${fmt(r.new_quantity)}.${r.low_stock_alert ? " Attention, stock bas." : ""}`; }
+    if (/stock bas|rupture|alerte/.test(t)) { const l = S.products.filter(isLow); return l.length ? "En alerte : " + l.map((p) => `${p.name} (${p.quantity})`).join(", ") + "." : "Aucun produit en alerte."; }
+    if (/stock|inventaire|rapport/.test(t)) { const r = T.stock_report.run({}); return `${r.products} produits, ${fmt(r.units)} unités, valeur ${fmt(r.value_sale)}. ${r.low_stock.length} en alerte.`; }
+  } catch (e) { return "Problème : " + e.message; }
+  return "Mode commandes simples. Essayez : « ajoute 10 riz au stock », « vends 2 riz », « stock bas », « note : … », « ajoute tâche … », « rappelle-moi dans 10 minutes de … », « minuteur 5 minutes », « calcule … ».";
+}
+
+// ================== Voix ==================
+const synth = window.speechSynthesis;
+let ttsAvailable = false, speaking = false;
+$("#ttsToggle").checked = ls.get("tts", true);
+$("#ttsToggle").onchange = () => { ls.set("tts", $("#ttsToggle").checked); if (!$("#ttsToggle").checked) stopSpeech(); };
+function cleanSpeech(t) { return t.replace(/\*\*|__|`|#+\s/g, "").replace(/https?:\/\/\S+/g, "").replace(/[•▪]\s?/g, "").trim().slice(0, 1900); }
+async function speak(text, after) {
+  const done = () => { speaking = false; setState("idle"); after && after(); };
+  const clean = cleanSpeech(text);
+  if (!$("#ttsToggle").checked || !clean) { done(); return; }
+  speaking = true; setState("speaking");
+  if (tts) {
+    try { await tts.speak(clean, { voice: "glassy", language: "fr", rate: 1.05 }); } catch (e) { if (e && e.code === "not_granted") tts = null; }
+    done(); return;
+  }
+  if (synth) {
+    try {
+      synth.cancel();
+      const u = new SpeechSynthesisUtterance(clean); u.lang = "fr-FR"; u.rate = 1.05; u.pitch = .9;
+      const v = synth.getVoices().find((x) => /^fr/i.test(x.lang)); if (v) u.voice = v;
+      u.onend = u.onerror = done; synth.speak(u); return;
+    } catch {}
+  }
+  done();
+}
+function stopSpeech() { try { tts?.stop(); } catch {} try { synth?.cancel(); } catch {} speaking = false; }
+
+// Dictée
+let dictating = false, dictText = "";
+function startDictation() {
+  if (!dict || busy) return;
+  stopSpeech(); dictText = ""; $("#input").value = "";
+  dict.start({ language: "fr-FR" }).catch((e) => {
+    if (e && e.code === "not_granted") { dict = null; $("#micBtn").hidden = true; sysMsg("Micro refusé : utilisez le clavier (ou le micro de votre clavier)."); }
+  });
+}
+function toggleMic() { if (!dict) { $("#input").focus(); return; } if (dictating) dict.stop().catch(() => {}); else startDictation(); }
+$("#micBtn").onclick = toggleMic;
+$("#reactor").onclick = toggleMic;
+
+// ================== Minuteurs & rappels ==================
+const timers = [];
+function startTimer(sec, label) { timers.push({ id: uid(), end: Date.now() + sec * 1000, label: label || `Minuteur ${sec >= 60 ? Math.round(sec / 60) + " min" : sec + " s"}` }); renderTimers(); }
+function renderTimers() {
+  const now = Date.now();
+  for (const t of [...timers]) if (t.end <= now) { timers.splice(timers.indexOf(t), 1); alertUser(t.label + " terminé."); }
+  $("#timers").innerHTML = timers.length ? timers.map((t) => { const s = Math.max(0, Math.round((t.end - now) / 1000)); return `<div class="item"><div class="txt">${esc(t.label)}</div><b style="font-variant-numeric:tabular-nums">${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}</b></div>`; }).join("")
+    : `<div class="empty">Aucun minuteur. « Minuteur 10 minutes ».</div>`;
+}
+setInterval(() => { if (timers.length) renderTimers(); checkReminders(); }, 1000);
+let lastRemCheck = 0;
+async function checkReminders() {
+  if (Date.now() - lastRemCheck < 10000) return; lastRemCheck = Date.now();
+  for (const r of S.reminders.filter((r) => !r.fired && Date.parse(r.at) <= Date.now())) { await put("reminders", { ...r, fired: true }); alertUser("Rappel : " + r.text); }
+}
+function beep() {
+  try { const c = new (window.AudioContext || window.webkitAudioContext)(); [880, 1320, 880].forEach((f, i) => { const o = c.createOscillator(), g = c.createGain(); o.frequency.value = f; o.connect(g); g.connect(c.destination); const t0 = c.currentTime + i * .2; g.gain.setValueAtTime(.18, t0); g.gain.exponentialRampToValueAtTime(.001, t0 + .18); o.start(t0); o.stop(t0 + .19); }); } catch {}
+}
+function alertUser(t) { beep(); sysMsg("🔔 " + t); try { navigator.vibrate?.([200, 100, 200]); } catch {} speak(t); }
+
+// ================== Accueil ==================
+function greet() {
+  const h = new Date().getHours(); const hi = h >= 5 && h < 18 ? "Bonjour" : "Bonsoir";
+  const el = bubble("ai"); el.querySelector(".body").textContent = `${hi}. Jarvis à votre service. Je gère votre stock, vos tâches, vos notes, vos rappels et vos calculs. Touchez le réacteur pour parler, ou écrivez.`;
+  const s = document.createElement("div"); s.className = "suggest";
+  for (const q of ["Ajoute 50 sacs de riz à 250 000 l'unité, seuil 10", "Vends 3 sacs de riz", "Rapport de stock", "Rappelle-moi dans 5 minutes de tester les rappels", "Combien font 17,5 % de 2 400 000 ?"]) {
+    const b = document.createElement("button"); b.textContent = q; b.onclick = () => ask(q); s.appendChild(b);
+  }
+  log.appendChild(s);
+}
+function updatePill() {
+  $("#pill").classList.toggle("on", !!sample);
+  $("#pillText").textContent = sample ? "Claude en ligne" : "Commandes simples";
+}
+
+// ================== Démarrage ==================
+for (const k of Object.keys(S)) S[k] = ls.get("data." + k, []); // copie locale en attendant la base
+renderAll(); greet(); showTab(["chat","stock","agenda"].includes(ls.get("tab","chat")) ? ls.get("tab","chat") : "chat");
+// Rejoue les derniers échanges
+for (const t of turns.slice(-6)) { if (t.role === "user") bubble("me", t.content); else bubble("ai").querySelector(".body").innerHTML = md(t.content); }
+if (turns.length) document.querySelector(".suggest")?.remove();
+
+(async () => {
+  const c = window.claude;
+  if (!c || !c.use) { updatePill(); return; }
+  const [dbNs, sampleNs, ttsNs, dictNs] = await Promise.all(["db", "sample", "tts", "dictation"].map((n) => c.use(n).catch(() => null)));
+  sample = sampleNs;
+  if (sample) { const lim = await sample.limits().catch(() => null); if (lim && !lim.tools) sample = null; }
+  tts = ttsNs; dict = dictNs;
+  updatePill();
+  if (dict) {
+    $("#micBtn").hidden = false;
+    dict.onPartial(({ text }) => { $("#input").value = (dictText + " " + text).trim(); });
+    dict.onFinal(({ text }) => { dictText = (dictText + " " + text).trim(); $("#input").value = dictText; });
+    dict.onState(({ state }) => {
+      const on = state === "listening" || state === "starting";
+      dictating = state !== "idle"; $("#micBtn").classList.toggle("on", on);
+      if (on) setState("listening");
+      if (state === "idle") { const v = dictText.trim(); dictText = ""; $("#input").value = ""; if (v) ask(v); else if (!busy && !speaking) setState("idle"); }
+    });
+  } else {
+    $("#input").placeholder = "Écrivez (ou utilisez le micro du clavier)…";
+  }
+  if (dbNs) {
+    db = dbNs;
+    const names = ["products", "todos", "notes", "reminders", "memory"];
+    let firstLoad = true;
+    for (const n of names) {
+      col(n).onSnapshot((snap) => {
+        // Première synchro : si la base est vide mais qu'une copie locale existe, on la téléverse.
+        if (firstLoad && snap.empty && !snap.metadata.fromCache && S[n].length) { for (const it of S[n]) col(n).doc(it.id).set(strip(it)).catch(() => {}); return; }
+        S[n] = snap.docs.map((d) => ({ ...d.data() }));
+        renderAll();
+      }, () => {});
+    }
+    col("moves").orderBy("at", "desc").limit(100).onSnapshot((snap) => { S.moves = snap.docs.map((d) => ({ ...d.data() })); renderAll(); }, () => {});
+    setTimeout(() => { firstLoad = false; }, 8000);
+  }
+})();
+</script>
