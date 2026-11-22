@@ -1,0 +1,776 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+</head>
+<body>
+<title>Quartier Moriba</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600;700&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+/* Layout: la carte du quartier à gauche, le poste de contrôle à droite ; tout s'empile sur téléphone. Un seul thème : une ville pixel au crépuscule. */
+:root{
+  --night:#14172b; --panel:#1c2040; --panel-2:#252a52; --line:#343b6e;
+  --ink:#eef0ff; --mute:#9ba2d8; --sun:#ffc857; --mint:#5ee6b0; --rose:#ff6b8b;
+  --display:"Pixelify Sans", ui-monospace, "Courier New", monospace;
+  --body:"Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme:dark;
+}
+html,body{background:var(--night);color:var(--ink)}
+body{font-family:var(--body);font-size:15px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 36px}
+.wrap{max-width:1340px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:14px}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(30px,4.2vw,46px);margin:0;line-height:1;letter-spacing:.5px;text-wrap:balance}
+h1 span{color:var(--sun)}
+.sub{color:var(--mute);margin:8px 0 0;max-width:62ch}
+.controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.clock{font-family:var(--display);font-size:20px;padding:6px 12px;background:var(--panel);border:2px solid var(--line);border-radius:6px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.seg{display:flex;border:2px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{font:600 15px var(--display);background:var(--panel);color:var(--mute);border:0;padding:8px 12px;cursor:pointer;border-right:2px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--sun);color:#2a1c00}
+button:focus-visible,select:focus-visible,textarea:focus-visible,canvas:focus-visible{outline:3px solid var(--mint);outline-offset:2px}
+main{display:grid;grid-template-columns:minmax(0,1fr) 350px;gap:16px;align-items:start}
+@media (max-width:960px){main{grid-template-columns:minmax(0,1fr)}}
+.left{display:flex;flex-direction:column;gap:12px;min-width:0}
+.scene{border:3px solid var(--line);border-radius:8px;overflow:hidden;background:#0c0e1c;line-height:0}
+canvas{display:block;width:100%;height:auto;cursor:pointer}
+.roster{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:flex;align-items:center;gap:8px;background:var(--panel);border:2px solid var(--line);border-radius:6px;padding:6px 10px;color:var(--ink);font:14px var(--body);cursor:pointer;text-align:left}
+.chip i{width:12px;height:12px;border-radius:2px;flex:none}
+.chip small{color:var(--mute);display:block;font-size:12px;line-height:1.2}
+.chip[aria-pressed="true"]{border-color:var(--sun);background:var(--panel-2)}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+@media (max-width:560px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.stat{background:var(--panel);border:2px solid var(--line);border-radius:6px;padding:8px 12px}
+.stat b{display:block;font:600 20px var(--display);font-variant-numeric:tabular-nums}
+.stat span{color:var(--mute);font-size:12px;text-transform:uppercase;letter-spacing:.8px}
+aside{display:flex;flex-direction:column;gap:12px;min-width:0}
+.card{background:var(--panel);border:2px solid var(--line);border-radius:8px;padding:14px}
+.card h2{font:600 14px var(--display);margin:0 0 10px;letter-spacing:1.2px;text-transform:uppercase;color:var(--mute)}
+.agent-head{display:flex;gap:12px;align-items:center}
+.avatar{width:44px;height:44px;border-radius:6px;flex:none;display:grid;place-items:center;font:700 22px var(--display);color:#14172b}
+.agent-head h3{margin:0;font:700 20px var(--display)}
+.agent-head p{margin:0;color:var(--mute);font-size:13px}
+.doing{margin:12px 0 8px;padding:8px 10px;background:var(--panel-2);border-radius:6px;font-size:14px}
+.doing em{font-style:normal;color:var(--sun);font-family:var(--display);font-size:12px;letter-spacing:1px;text-transform:uppercase;display:block}
+.mem{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute);max-height:120px;overflow:auto}
+.mem li b{color:var(--ink);font-weight:400}
+.stock{display:flex;flex-direction:column;gap:8px}
+.row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 8px;font-size:13px}
+.row .q{font-variant-numeric:tabular-nums;color:var(--mute)}
+.bar{grid-column:1/-1;height:8px;background:var(--panel-2);border-radius:2px;overflow:hidden;position:relative}
+.bar i{display:block;height:100%;background:var(--mint);transition:width .4s}
+.bar i.low{background:var(--rose)}
+.bar s{position:absolute;top:0;bottom:0;width:2px;background:var(--sun);opacity:.8}
+form{display:flex;flex-direction:column;gap:8px}
+label{font-size:13px;color:var(--mute)}
+textarea,select{font:14px var(--body);background:var(--panel-2);color:var(--ink);border:2px solid var(--line);border-radius:6px;padding:8px;width:100%;box-sizing:border-box}
+textarea{resize:vertical;min-height:58px}
+.send{font:700 15px var(--display);background:var(--mint);color:#0b2a1e;border:0;border-radius:6px;padding:10px;cursor:pointer;letter-spacing:.5px}
+.send:hover{filter:brightness(1.08)}
+.hint{font-size:12px;color:var(--mute);margin:0}
+.log{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;max-height:300px;overflow:auto;font-size:13px}
+.log li{display:grid;grid-template-columns:42px minmax(0,1fr);gap:8px}
+.log time{font-family:var(--display);color:var(--mute);font-variant-numeric:tabular-nums}
+.log b{font-weight:700}
+@media (prefers-reduced-motion:reduce){.bar i{transition:none}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Quartier <span>Moriba</span></h1>
+      <p class="sub">Huit agents IA vivent et travaillent ici. Ils vendent, comptent le stock, se parlent quand un produit manque, commandent, livrent et facturent. Cliquez sur un agent pour suivre ce qu'il fait, ou confiez-lui une mission.</p>
+    </div>
+    <div class="controls">
+      <div class="clock" id="clock">Jour 1 · 08:00</div>
+      <div class="seg" role="group" aria-label="Vitesse de la simulation">
+        <button type="button" data-speed="0" aria-pressed="false">Pause</button>
+        <button type="button" data-speed="1" aria-pressed="true">1×</button>
+        <button type="button" data-speed="2" aria-pressed="false">2×</button>
+        <button type="button" data-speed="4" aria-pressed="false">4×</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="left">
+      <div class="scene"><canvas id="map" tabindex="0" aria-label="Carte du quartier des agents"></canvas></div>
+      <div class="stats">
+        <div class="stat"><span>Chiffre d'affaires</span><b id="sRev">0 F</b></div>
+        <div class="stat"><span>Achats fournisseurs</span><b id="sExp">0 F</b></div>
+        <div class="stat"><span>Commandes en cours</span><b id="sOrd">0</b></div>
+        <div class="stat"><span>Conversations</span><b id="sConv">0</b></div>
+      </div>
+      <div class="roster" id="roster"></div>
+    </div>
+
+    <aside>
+      <section class="card" id="agentCard">
+        <h2>Agent suivi</h2>
+        <div class="agent-head">
+          <div class="avatar" id="aAv">A</div>
+          <div><h3 id="aName">—</h3><p id="aRole">—</p></div>
+        </div>
+        <div class="doing"><em>En ce moment</em><span id="aDoing">—</span></div>
+        <ul class="mem" id="aMem"></ul>
+      </section>
+
+      <section class="card">
+        <h2>Confier une mission</h2>
+        <form id="mission">
+          <label for="mText">Mission</label>
+          <textarea id="mText" placeholder="Ex. : Prépare une promo sur l'huile pour ce week-end">Vérifie le stock de sucre avant le marché de samedi</textarea>
+          <label for="mWho">Agent</label>
+          <select id="mWho"></select>
+          <button class="send" type="submit">Envoyer la mission</button>
+          <p class="hint">En mode automatique, Hawa lit la mission et va voir l'agent le plus compétent.</p>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2>Stock de l'entrepôt</h2>
+        <div class="stock" id="stock"></div>
+      </section>
+
+      <section class="card">
+        <h2>Journal du quartier</h2>
+        <ul class="log" id="log"></ul>
+      </section>
+    </aside>
+  </main>
+</div>
+
+<script>
+(() => {
+"use strict";
+const T = 16, W = 36, H = 24, S = 3;
+const cv = document.getElementById("map");
+const ctx = cv.getContext("2d");
+cv.width = W * T * S; cv.height = H * T * S;
+
+/* ---------- Carte ---------- */
+const grid = Array.from({length: H}, () => Array(W).fill("g"));
+for (let x = 0; x < W; x++) for (const y of [7, 8, 16, 17]) grid[y][x] = "r";
+for (let y = 0; y < H; y++) for (const x of [11, 12, 23, 24]) grid[y][x] = "r";
+for (let y = 9; y <= 15; y++) for (let x = 13; x <= 22; x++) grid[y][x] = "p";
+for (const [x, y] of [[17,11],[18,11],[17,12],[18,12]]) grid[y][x] = "f";
+for (let y = 18; y <= 23; y++) for (let x = 25; x <= 35; x++) grid[y][x] = "k";
+for (let y = 20; y <= 22; y++) for (let x = 31; x <= 34; x++) grid[y][x] = "w";
+const parkTrees = [[26,19],[28,22],[30,18],[35,20],[26,23],[33,18],[29,20]];
+for (const [x, y] of parkTrees) grid[y][x] = "t";
+const deco = [[0,0],[3,0],[7,0],[10,0],[14,0],[20,0],[27,0],[33,0],[35,3],[35,12],[0,13],[10,23],[13,23],[22,23],[0,23],[22,9],[13,9]];
+for (const [x, y] of deco) if (grid[y][x] === "g" || grid[y][x] === "p") grid[y][x] = "t";
+
+const B = [
+  {id:"entrepot", name:"Entrepôt", x:1, y:1, w:9, h:6, roof:"#c4703a", wall:"#7d4526", door:[5,7]},
+  {id:"labo", name:"Labo IA", x:14, y:1, w:8, h:6, roof:"#6c63d9", wall:"#3f3896", door:[18,7]},
+  {id:"banque", name:"Banque", x:26, y:1, w:9, h:6, roof:"#3a9d8f", wall:"#226357", door:[30,7]},
+  {id:"commandes", name:"Bureau des commandes", x:1, y:10, w:9, h:6, roof:"#d4a23c", wall:"#86621d", door:[5,16]},
+  {id:"boutique", name:"Boutique", x:26, y:10, w:9, h:6, roof:"#d9566f", wall:"#8a2f42", door:[30,16]},
+  {id:"quai", name:"Quai de livraison", x:1, y:18, w:9, h:5, roof:"#7b8aa8", wall:"#4a5672", door:[5,17], top:true},
+  {id:"cafe", name:"Café Tériya", x:14, y:18, w:8, h:5, roof:"#9b6b4c", wall:"#5e3d2a", door:[18,17], top:true},
+];
+const BM = Object.fromEntries(B.map(b => [b.id, b]));
+for (const b of B) for (let y = b.y; y < b.y + b.h; y++) for (let x = b.x; x < b.x + b.w; x++) grid[y][x] = "b";
+
+const walk = (x, y) => x >= 0 && y >= 0 && x < W && y < H && "rpk".includes(grid[y][x]);
+const placeName = {entrepot:"l'entrepôt", labo:"le labo IA", banque:"la banque", commandes:"le bureau des commandes", boutique:"la boutique", quai:"le quai", cafe:"le café", place:"la place", parc:"le parc"};
+
+function spotFor(place) {
+  const opts = [];
+  if (BM[place]) { const [dx, dy] = BM[place].door; for (let x = dx - 1; x <= dx + 1; x++) if (walk(x, dy)) opts.push([x, dy]); }
+  else if (place === "place") { for (let y = 9; y <= 15; y++) for (let x = 14; x <= 21; x++) if (walk(x, y)) opts.push([x, y]); }
+  else if (place === "parc") { for (let y = 18; y <= 23; y++) for (let x = 25; x <= 35; x++) if (walk(x, y)) opts.push([x, y]); }
+  return opts[Math.floor(Math.random() * opts.length)];
+}
+
+function bfs(sx, sy, tx, ty) {
+  if (!walk(tx, ty)) return null;
+  if (sx === tx && sy === ty) return [];
+  const prev = new Int32Array(W * H).fill(-1), q = [sy * W + sx];
+  prev[q[0]] = q[0];
+  for (let i = 0; i < q.length; i++) {
+    const c = q[i], cx = c % W, cy = (c / W) | 0;
+    if (cx === tx && cy === ty) break;
+    for (const [ox, oy] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+      const nx = cx + ox, ny = cy + oy, n = ny * W + nx;
+      if (walk(nx, ny) && prev[n] < 0) { prev[n] = c; q.push(n); }
+    }
+  }
+  const t = ty * W + tx; if (prev[t] < 0) return null;
+  const path = []; let c = t;
+  while (c !== sy * W + sx) { path.push([c % W, (c / W) | 0]); c = prev[c]; }
+  return path.reverse();
+}
+
+/* ---------- Économie ---------- */
+const products = [
+  {name:"Riz 25 kg", qty:46, max:80, min:18, price:17500, buy:14000},
+  {name:"Huile 5 L", qty:30, max:60, min:14, price:6500, buy:5200},
+  {name:"Sucre 1 kg", qty:22, max:70, min:20, price:800, buy:600},
+  {name:"Lait en poudre", qty:38, max:60, min:12, price:3200, buy:2500},
+  {name:"Savon (carton)", qty:20, max:40, min:8, price:9000, buy:7000},
+  {name:"Farine 50 kg", qty:16, max:40, min:10, price:21000, buy:17500},
+];
+const econ = {rev:0, exp:0, convs:0};
+const pending = new Set();
+const fmt = n => n.toLocaleString("fr-FR") + " F";
+
+/* ---------- Agents ---------- */
+const A = [
+  {id:"ada", name:"Ada", role:"Agent inventaire", color:"#5ee6b0", home:"entrepot", skin:"#8d5a3b", hair:"#1d1410"},
+  {id:"bakary", name:"Bakary", role:"Agent commandes", color:"#ffc857", home:"commandes", skin:"#5b3a26", hair:"#0e0a08"},
+  {id:"clara", name:"Clara", role:"Agent ventes", color:"#ff6b8b", home:"boutique", skin:"#e9b48f", hair:"#7a3b1c"},
+  {id:"diallo", name:"Diallo", role:"Agent comptable", color:"#58b6ff", home:"banque", skin:"#4a2e1f", hair:"#111"},
+  {id:"emile", name:"Émile", role:"Agent logistique", color:"#ff9a4d", home:"quai", skin:"#d79b73", hair:"#3b2a1a"},
+  {id:"fatou", name:"Fatou", role:"Agent prévision", color:"#b48cff", home:"labo", skin:"#6b412a", hair:"#160d08"},
+  {id:"gaspard", name:"Gaspard", role:"Agent support client", color:"#7fe0ff", home:"boutique", skin:"#f0c6a2", hair:"#c9a14a"},
+  {id:"hawa", name:"Hawa", role:"Coordinatrice", color:"#f6f1a0", home:"place", skin:"#7a4a2e", hair:"#2a1208"},
+];
+const AM = Object.fromEntries(A.map(a => [a.id, a]));
+const starts = {ada:[6,7], bakary:[4,16], clara:[29,16], diallo:[31,7], emile:[6,17], fatou:[19,7], gaspard:[32,16], hawa:[16,14]};
+for (const a of A) {
+  const [x, y] = starts[a.id];
+  Object.assign(a, {tx:x, ty:y, px:x*T+T/2, py:y*T+T/2, path:[], queue:[], cur:null, bubble:null, activity:"Arrive au quartier", hold:null, talking:false, face:1, step:0, cool:0});
+}
+
+/* ---------- Journal ---------- */
+let simMin = 8 * 60;
+const logEl = document.getElementById("log");
+const memory = Object.fromEntries(A.map(a => [a.id, []]));
+const clockStr = () => { const m = Math.floor(simMin) % 1440; return String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0"); };
+function log(agent, text) {
+  const li = document.createElement("li");
+  const tm = document.createElement("time"); tm.textContent = clockStr();
+  const d = document.createElement("div");
+  if (agent) { const b = document.createElement("b"); b.textContent = agent.name + " "; b.style.color = agent.color; d.append(b); memory[agent.id].unshift({t:clockStr(), text}); memory[agent.id].length = Math.min(memory[agent.id].length, 12); }
+  d.append(text);
+  li.append(tm, d); logEl.prepend(li);
+  while (logEl.children.length > 80) logEl.lastChild.remove();
+  if (agent === selected) renderAgent();
+}
+const say = (a, text, dur = 2.6) => { a.bubble = {text, t:dur}; };
+
+/* ---------- Tâches ---------- */
+const goto = (place, extra = {}) => ({type:"goto", place, ...extra});
+const wait = (sec, activity, extra = {}) => ({type:"wait", sec, activity, ...extra});
+const talk = (to, lines, onDone, extra = {}) => ({type:"talk", to, lines, onDone, ...extra});
+const run = fn => ({type:"do", fn});
+
+function assign(a, tasks) {
+  if (a.cur && a.cur.idle) { a.cur = null; if (a.path.length > 1) a.path = a.path.slice(0, 1); }
+  a.queue = a.queue.filter(t => !t.idle);
+  a.queue.push(...tasks);
+}
+
+function idleTasks(a) {
+  const r = Math.random(), h = Math.floor(simMin / 60) % 24;
+  const work = {
+    ada: "Compte les cartons et scanne les étagères",
+    bakary: "Compare les prix des fournisseurs",
+    clara: "Accueille les clients au comptoir",
+    diallo: "Rapproche les ventes et la caisse",
+    emile: "Optimise les tournées de livraison",
+    fatou: "Entraîne le modèle de prévision",
+    gaspard: "Répond aux messages des clients",
+    hawa: "Surveille le tableau de bord du quartier",
+  }[a.id];
+  const night = h >= 21 || h < 6;
+  if (r < (night ? 0.8 : 0.58)) {
+    return [goto(a.home, {idle:true}), wait(9 + Math.random() * 7, work, {idle:true, work:true})];
+  }
+  const spot = r < 0.74 ? "cafe" : r < 0.9 ? "place" : "parc";
+  const act = {cafe:"Pause thé au café", place:"Discute sur la place", parc:"Se promène dans le parc"}[spot];
+  return [goto(spot, {idle:true}), wait(6 + Math.random() * 6, act, {idle:true, social:true})];
+}
+
+/* ---------- Dialogues ---------- */
+const smallTalk = [
+  ["Les clients demandent beaucoup de {p} en ce moment.", "Je l'ai vu aussi. Je garde un œil dessus."],
+  ["Tu as vu la queue à la boutique ce matin ?", "Oui ! Le marché approche, ça se sent."],
+  ["Le fournisseur de {p} a encore augmenté ses prix.", "On devrait comparer avec celui de Bamako."],
+  ["Mon modèle dit que la pluie fait baisser les ventes.", "Logique, les gens sortent moins."],
+  ["Tu prends un thé ?", "Avec plaisir, trois verres comme d'habitude."],
+  ["J'ai trouvé une erreur de 500 F dans la caisse.", "Bien vu. Tu as pu la corriger ?", "Oui, un rendu de monnaie mal saisi."],
+  ["On pourrait regrouper les livraisons du jeudi.", "Bonne idée, ça économise un trajet."],
+];
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+const fill = s => s.replace("{p}", pick(products).name);
+
+/* ---------- Conversations ---------- */
+const convs = [];
+function startConv(a, b, lines, onDone) {
+  a.talking = b.talking = true;
+  a.face = b.px >= a.px ? 1 : -1; b.face = -a.face;
+  convs.push({a, b, lines, i:0, t:0, onDone});
+  econ.convs++;
+}
+function updateConvs(dt) {
+  for (let k = convs.length - 1; k >= 0; k--) {
+    const c = convs[k];
+    c.t -= dt;
+    if (c.t > 0) continue;
+    if (c.i < c.lines.length) {
+      const [who, text] = c.lines[c.i];
+      say(who === 0 ? c.a : c.b, text, 2.3);
+      c.t = 2.3; c.i++;
+    } else {
+      c.a.talking = c.b.talking = false;
+      if (c.b.hold === c.a) c.b.hold = null;
+      c.a.cool = c.b.cool = 8;
+      convs.splice(k, 1);
+      if (c.a.cur && c.a.cur.type === "talk" && c.a.cur.conv === c) c.a.cur = null;
+      if (c.onDone) c.onDone();
+    }
+  }
+}
+
+/* ---------- Scénario du stock ---------- */
+function checkStock(ada) {
+  const low = products.find(p => p.qty <= p.min && !pending.has(p.name));
+  if (!low) { if (Math.random() < 0.3) log(ada, "a terminé l'inventaire : tout est au-dessus des seuils."); return; }
+  pending.add(low.name);
+  const n = low.max - low.qty;
+  log(ada, `détecte un stock bas : ${low.name} (${low.qty} restants, seuil ${low.min}).`);
+  say(ada, `${low.name} : plus que ${low.qty} !`);
+  const bak = AM.bakary, emi = AM.emile, dia = AM.diallo;
+  assign(ada, [talk("bakary", [
+    [0, `Bakary, le ${low.name} passe sous le seuil.`],
+    [1, `Combien il en faut ?`],
+    [0, `${n} pour revenir au stock cible.`],
+    [1, `Je lance la commande tout de suite.`],
+  ], () => {
+    assign(bak, [goto("commandes"), wait(5, `Négocie ${n} × ${low.name} avec le fournisseur`), run(() => {
+      const cost = n * low.buy; econ.exp += cost;
+      log(bak, `a commandé ${n} × ${low.name} pour ${fmt(cost)}.`);
+      say(bak, "Commande validée !");
+      assign(dia, [goto("banque"), wait(4, `Enregistre la facture : ${fmt(cost)}`), run(() => log(dia, `a payé le fournisseur et enregistré ${fmt(cost)} de ${low.name}.`))]);
+    }), talk("emile", [
+      [0, `Émile, ${n} × ${low.name} arrivent au quai.`],
+      [1, `Je prépare le camion et je les range.`],
+    ], () => {
+      assign(emi, [goto("quai"), run(() => { truck = true; }), wait(6, `Réceptionne ${n} × ${low.name}`), goto("entrepot"), wait(4, "Range la marchandise sur les étagères"), run(() => {
+        low.qty += n; pending.delete(low.name); truck = false;
+        log(emi, `a livré ${n} × ${low.name} à l'entrepôt. Stock : ${low.qty}.`);
+        say(emi, "Livraison rangée !"); renderStock();
+      })]);
+    })]);
+  })]);
+}
+
+function sell(clara) {
+  const avail = products.filter(p => p.qty > 0);
+  if (!avail.length) return;
+  const p = pick(avail), n = Math.min(p.qty, 1 + Math.floor(Math.random() * 4));
+  p.qty -= n; econ.rev += n * p.price;
+  say(clara, `Vendu : ${n} × ${p.name}`, 2);
+  if (Math.random() < 0.35) log(clara, `a vendu ${n} × ${p.name} (${fmt(n * p.price)}).`);
+  renderStock();
+}
+
+const forecasts = [
+  p => `prévoit +15 % de demande de ${p.name} avant le marché de samedi.`,
+  p => `remarque que ${p.name} se vend surtout le matin.`,
+  p => `recommande de relever le seuil de ${p.name}.`,
+];
+function forecast(fatou) {
+  const p = pick(products);
+  const f = pick(forecasts);
+  log(fatou, f(p));
+  if (f === forecasts[2] || f === forecasts[0]) { p.min = Math.min(p.max - 10, p.min + 2); renderStock(); }
+  say(fatou, "Nouvelle prévision prête");
+  if (Math.random() < 0.5) assign(fatou, [talk("hawa", [[0, `Hawa, attention au ${p.name} cette semaine.`], [1, "Merci Fatou, je préviens l'équipe."]])]);
+}
+
+const tickets = ["un client demande où en est sa livraison", "une cliente veut échanger un sac de farine abîmé", "un commerçant demande un prix de gros sur le savon", "un client signale une erreur de rendu de monnaie"];
+function support(g) {
+  const t = pick(tickets);
+  log(g, `a traité un ticket : ${t}.`);
+  say(g, "Ticket résolu ✓");
+}
+
+function teamCheck(hawa) {
+  const others = A.filter(x => x !== hawa && !x.talking);
+  const b = pick(others);
+  assign(hawa, [talk(b.id, [[0, `Point rapide, ${b.name} : tout va bien ?`], [1, pick(["Oui, je suis à jour.", "Un peu chargé, mais ça avance.", "Tout roule, merci !"])]], () => log(hawa, `a fait un point d'équipe avec ${b.name}.`))]);
+}
+
+/* ---------- Missions ---------- */
+const routes = [
+  [/stock|inventaire|compt(er|e)|étag|entrep/i, "ada"],
+  [/command|fournisseur|achat|achet|approvision/i, "bakary"],
+  [/vente|vend|promo|prix|boutique/i, "clara"],
+  [/factur|compta|budget|paie|caisse|banque|dépense/i, "diallo"],
+  [/livr|camion|transport|quai|tournée/i, "emile"],
+  [/prévi|analy|tendance|prédi|donnée|ia\b/i, "fatou"],
+  [/client|support|plainte|réclam|ticket/i, "gaspard"],
+];
+function mission(text, who) {
+  text = text.trim(); if (!text) return;
+  let target = who !== "auto" ? AM[who] : AM[(routes.find(([re]) => re.test(text)) || [0, "hawa"])[1]];
+  const doWork = ag => assign(ag, [goto(ag.home), wait(8, `Mission : ${text}`), run(() => { log(ag, `a terminé la mission « ${text} ».`); say(ag, "Mission accomplie !"); })]);
+  if (who === "auto" && target.id !== "hawa") {
+    log(AM.hawa, `reçoit la mission « ${text} » et la confie à ${target.name}.`);
+    assign(AM.hawa, [talk(target.id, [[0, `${target.name}, nouvelle mission : ${text}`], [1, "Compris, je m'en occupe."]], () => doWork(target))]);
+  } else {
+    log(target, `reçoit la mission « ${text} ».`);
+    say(target, "Mission reçue !");
+    doWork(target);
+  }
+  select(target);
+}
+
+/* ---------- Mise à jour ---------- */
+let truck = false;
+const SPEED = 3.2;
+function trimForHold(a) { if (a.path.length > 1) a.path = a.path.slice(0, 1); if (a.cur && a.cur.type === "goto") a.cur.started = false; }
+
+function updateAgent(a, dt) {
+  if (a.bubble && (a.bubble.t -= dt) <= 0) a.bubble = null;
+  a.cool = Math.max(0, a.cool - dt);
+  if (a.path.length) {
+    const [nx, ny] = a.path[0], gx = nx * T + T / 2, gy = ny * T + T / 2;
+    const dx = gx - a.px, dy = gy - a.py, d = Math.hypot(dx, dy), s = SPEED * T * dt;
+    if (dx) a.face = dx > 0 ? 1 : -1;
+    a.step += dt * 9;
+    if (d <= s) { a.px = gx; a.py = gy; a.tx = nx; a.ty = ny; a.path.shift(); }
+    else { a.px += dx / d * s; a.py += dy / d * s; }
+    return;
+  }
+  if (a.talking) { a.activity = "En pleine conversation"; return; }
+  if (a.hold) { a.activity = `Attend ${a.hold.name}`; return; }
+  if (!a.cur) { if (!a.queue.length) a.queue.push(...idleTasks(a)); a.cur = a.queue.shift(); }
+  const c = a.cur;
+  if (c.type === "goto") {
+    if (!c.started) {
+      c.started = true; c.target = c.target || spotFor(c.place);
+      a.activity = `Se rend ${placeName[c.place] ? "à " + placeName[c.place] : ""}`.replace("à le ", "au ").replace("à la ", "à la ");
+      a.path = (c.target && bfs(a.tx, a.ty, c.target[0], c.target[1])) || [];
+    } else a.cur = null;
+  } else if (c.type === "wait") {
+    a.activity = c.activity;
+    c.sec -= dt;
+    if (c.work) {
+      c.tick = (c.tick || 0) + dt;
+      if (a.id === "clara" && c.tick > 3.5) { c.tick = 0; sell(a); }
+    }
+    if (c.social && !a.cool && Math.random() < dt * 0.6) {
+      const b = A.find(o => o !== a && o.cur && o.cur.social && !o.talking && !o.hold && !o.cool && !o.path.length && Math.abs(o.tx - a.tx) + Math.abs(o.ty - a.ty) <= 3);
+      if (b) { const d = pick(smallTalk); startConv(a, b, d.map((l, i) => [i % 2, fill(l)])); return; }
+    }
+    if (c.sec <= 0) {
+      a.cur = null;
+      if (c.work) {
+        if (a.id === "ada") checkStock(a);
+        else if (a.id === "fatou" && Math.random() < 0.7) forecast(a);
+        else if (a.id === "gaspard" && Math.random() < 0.8) support(a);
+        else if (a.id === "hawa" && Math.random() < 0.6) teamCheck(a);
+      }
+    }
+  } else if (c.type === "talk") {
+    const b = AM[c.to];
+    if (c.conv) return;
+    c.waited = (c.waited || 0) + dt;
+    if (c.waited > 40) { a.cur = null; if (b.hold === a) b.hold = null; return; }
+    if (b.hold && b.hold !== a) { a.activity = `Attend que ${b.name} soit libre`; return; }
+    if (!b.hold) { b.hold = a; trimForHold(b); }
+    a.activity = `Va parler à ${b.name}`;
+    if (b.path.length || b.talking) return;
+    if (Math.abs(b.tx - a.tx) + Math.abs(b.ty - a.ty) <= 1) {
+      startConv(a, b, c.lines, c.onDone); c.conv = convs[convs.length - 1]; return;
+    }
+    const p = bfs(a.tx, a.ty, b.tx, b.ty);
+    if (!p) { a.cur = null; b.hold = null; return; }
+    p.pop(); a.path = p;
+  } else if (c.type === "do") { c.fn(); a.cur = null; }
+}
+
+/* ---------- Rendu statique ---------- */
+const bg = document.createElement("canvas");
+bg.width = W * T; bg.height = H * T;
+function hash(x, y) { const n = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return n - Math.floor(n); }
+function drawStatic() {
+  const g = bg.getContext("2d");
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const c = grid[y][x], X = x * T, Y = y * T, h = hash(x, y);
+    if (c === "r") {
+      g.fillStyle = "#4a4f66"; g.fillRect(X, Y, T, T);
+      g.fillStyle = "#535872"; if (h > .7) g.fillRect(X + 3, Y + 9, 2, 2);
+    } else if (c === "p") {
+      g.fillStyle = (x + y) % 2 ? "#cdbb9a" : "#c3b08e"; g.fillRect(X, Y, T, T);
+      g.fillStyle = "#b29f7e"; g.fillRect(X, Y + T - 1, T, 1); g.fillRect(X + T - 1, Y, 1, T);
+    } else if (c === "w") {
+      g.fillStyle = "#3d8bd6"; g.fillRect(X, Y, T, T);
+    } else {
+      g.fillStyle = c === "k" ? (h > .5 ? "#6cbf58" : "#66b853") : (h > .5 ? "#5aa84d" : "#55a148");
+      g.fillRect(X, Y, T, T);
+      if (h > .82) { g.fillStyle = "#7acc62"; g.fillRect(X + (h * 97 % 12) | 0, Y + (h * 53 % 12) | 0, 2, 2); }
+      if (h < .05) { g.fillStyle = "#ffd36b"; g.fillRect(X + 6, Y + 7, 2, 2); }
+    }
+  }
+  // marquages au sol
+  g.fillStyle = "#d9d3a8";
+  for (let x = 0; x < W; x++) { if ([11,12,23,24].includes(x)) continue; if (x % 2 === 0) { g.fillRect(x * T + 3, 8 * T - 1, 10, 2); g.fillRect(x * T + 3, 17 * T - 1, 10, 2); } }
+  for (let y = 0; y < H; y++) { if ([7,8,16,17].includes(y)) continue; if (y % 2 === 0) { g.fillRect(12 * T - 1, y * T + 3, 2, 10); g.fillRect(24 * T - 1, y * T + 3, 2, 10); } }
+  // passages piétons
+  g.fillStyle = "#e8e4d0";
+  for (const [cx, cy] of [[11,7],[23,7],[11,16],[23,16]]) for (let i = 0; i < 4; i++) { g.fillRect(cx * T + i * 8 + 1, cy * T - 4, 5, 3); g.fillRect(cx * T + i * 8 + 1, (cy + 2) * T + 1, 5, 3); }
+  // étang
+  g.fillStyle = "#6fb7f0"; g.fillRect(31 * T + 3, 20 * T + 4, 18, 2); g.fillRect(32 * T + 8, 21 * T + 9, 14, 2);
+  g.strokeStyle = "#2f6fae"; g.lineWidth = 2; g.strokeRect(31 * T + 1, 20 * T + 1, 4 * T - 2, 3 * T - 2);
+  // allées du parc
+  g.fillStyle = "#d8c79f";
+  for (let x = 25; x <= 30; x++) g.fillRect(x * T, 21 * T + 5, T, 6);
+  // banc
+  g.fillStyle = "#7a4b2a"; g.fillRect(27 * T + 2, 20 * T + 4, 20, 4); g.fillRect(27 * T + 3, 20 * T + 8, 2, 4); g.fillRect(27 * T + 19, 20 * T + 8, 2, 4);
+  // bâtiments
+  for (const b of B) drawBuilding(g, b);
+  // caisses devant l'entrepôt
+  for (const [x, y] of [[1,6],[9,6]]) { g.fillStyle = "#a8743d"; g.fillRect(x * T + 2, y * T + 3, 12, 11); g.strokeStyle = "#6b4520"; g.lineWidth = 1; g.strokeRect(x * T + 2.5, y * T + 3.5, 11, 10); g.beginPath(); g.moveTo(x * T + 2, y * T + 3); g.lineTo(x * T + 14, y * T + 14); g.stroke(); }
+  // terrasse du café
+  for (const x of [14.3, 20.2]) { g.fillStyle = "#e9e2cf"; g.beginPath(); g.arc(x * T + 6, 22.5 * T, 4, 0, 7); g.fill(); }
+}
+function drawBuilding(g, b) {
+  const X = b.x * T, Y = b.y * T, Wd = b.w * T, Hd = b.h * T, wallH = 18;
+  g.fillStyle = "rgba(0,0,0,.25)"; g.fillRect(X + 3, Y + 3, Wd, Hd);
+  g.fillStyle = b.roof; g.fillRect(X, Y, Wd, Hd - wallH);
+  g.fillStyle = "rgba(0,0,0,.12)";
+  for (let yy = Y + 4; yy < Y + Hd - wallH; yy += 6) g.fillRect(X, yy, Wd, 2);
+  g.fillStyle = "rgba(255,255,255,.18)"; g.fillRect(X, Y, Wd, 2);
+  g.fillStyle = b.wall; g.fillRect(X, Y + Hd - wallH, Wd, wallH);
+  g.fillStyle = "rgba(0,0,0,.3)"; g.fillRect(X, Y + Hd - wallH, Wd, 2);
+  b.windows = [];
+  for (let wx = X + 6; wx < X + Wd - 10; wx += 16) {
+    const doorX = b.door[0] * T;
+    if (!b.top && Math.abs(wx + 4 - (doorX + 8)) < 12) continue;
+    g.fillStyle = "#1e2a44"; g.fillRect(wx, Y + Hd - wallH + 5, 9, 8);
+    g.fillStyle = "#9fc4e8"; g.fillRect(wx + 1, Y + Hd - wallH + 6, 3, 3);
+    b.windows.push([wx, Y + Hd - wallH + 5]);
+  }
+  const dX = b.door[0] * T + 3;
+  if (!b.top) {
+    g.fillStyle = "#2b1d14"; g.fillRect(dX, Y + Hd - 14, 10, 14);
+    g.fillStyle = "#f2c14e"; g.fillRect(dX + 7, Y + Hd - 8, 2, 2);
+  } else {
+    g.fillStyle = "#2b1d14"; g.fillRect(dX, Y, 10, 6);
+    g.fillStyle = "#e9e2cf"; for (let i = 0; i < 5; i++) g.fillRect(dX - 6 + i * 5, Y - 3, 4, 3);
+  }
+  // enseigne
+  g.font = "600 6px 'Pixelify Sans', monospace";
+  const tw = g.measureText(b.name).width + 8, sx = X + Wd / 2 - tw / 2, sy = Y + (Hd - wallH) / 2 - 5;
+  g.fillStyle = "rgba(20,23,43,.85)"; g.fillRect(sx, sy, tw, 10);
+  g.fillStyle = "#fff6dd"; g.textAlign = "center"; g.textBaseline = "middle";
+  g.fillText(b.name, X + Wd / 2, sy + 5.5);
+  // détails par bâtiment
+  if (b.id === "labo") { g.fillStyle = "#d9dcf5"; g.beginPath(); g.arc(X + Wd - 14, Y + 10, 6, Math.PI * .8, Math.PI * 1.9); g.fill(); g.fillRect(X + Wd - 15, Y + 10, 2, 8); }
+  if (b.id === "banque") { g.fillStyle = "#e8f3ef"; for (let i = 0; i < 4; i++) g.fillRect(X + 10 + i * 34, Y + Hd - wallH - 4, 4, 4); }
+  if (b.id === "boutique") { g.fillStyle = "#fff"; for (let i = 0; i < Wd; i += 8) { g.fillStyle = i % 16 ? "#fff" : "#d9566f"; g.fillRect(X + i, Y + Hd - wallH - 4, 8, 4); } }
+}
+function drawTree(x, y) {
+  const X = x * T + 8, Y = y * T + 8;
+  ctx.fillStyle = "rgba(0,0,0,.25)"; ctx.beginPath(); ctx.ellipse(X + 1, Y + 6, 7, 3, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = "#6b4423"; ctx.fillRect(X - 1, Y, 3, 6);
+  ctx.fillStyle = "#2f7a3a"; ctx.beginPath(); ctx.arc(X, Y - 3, 7, 0, 7); ctx.fill();
+  ctx.fillStyle = "#3f9a49"; ctx.beginPath(); ctx.arc(X - 2, Y - 5, 4, 0, 7); ctx.fill();
+}
+
+/* ---------- Rendu dynamique ---------- */
+let time = 0;
+function darkness() {
+  const h = (simMin % 1440) / 60;
+  if (h >= 7 && h < 18) return 0;
+  if (h >= 18 && h < 21) return (h - 18) / 3 * .55;
+  if (h >= 21 || h < 5) return .55;
+  return (1 - (h - 5) / 2) * .55;
+}
+function drawAgent(a) {
+  const x = Math.round(a.px), y = Math.round(a.py) + 2, moving = a.path.length > 0;
+  const bob = moving ? Math.round(Math.sin(a.step) * 1) : 0, leg = moving ? Math.sin(a.step) > 0 : false;
+  if (a === selected) { ctx.strokeStyle = "#ffc857"; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.ellipse(x, y + 5, 7, 3, 0, 0, 7); ctx.stroke(); }
+  ctx.fillStyle = "rgba(0,0,0,.3)"; ctx.beginPath(); ctx.ellipse(x, y + 5, 5, 2, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = "#2a2d45";
+  ctx.fillRect(x - 3, y + 1, 2, leg ? 4 : 3); ctx.fillRect(x + 1, y + 1, 2, leg ? 3 : 4);
+  ctx.fillStyle = a.color; ctx.fillRect(x - 4, y - 5 + bob, 8, 7);
+  ctx.fillStyle = "rgba(0,0,0,.2)"; ctx.fillRect(x - 4, y + 1 + bob, 8, 1);
+  ctx.fillStyle = a.skin; ctx.fillRect(x - 3, y - 11 + bob, 6, 6);
+  ctx.fillStyle = a.hair; ctx.fillRect(x - 3, y - 12 + bob, 6, 2); ctx.fillRect(a.face > 0 ? x - 3 : x + 2, y - 11 + bob, 1, 3);
+  ctx.fillStyle = "#111"; ctx.fillRect(a.face > 0 ? x + 1 : x - 2, y - 9 + bob, 1, 1);
+  // antenne d'agent IA
+  ctx.fillStyle = "#c9cde8"; ctx.fillRect(x, y - 15 + bob, 1, 3);
+  const pulse = .6 + .4 * Math.sin(time * 4 + a.px);
+  ctx.globalAlpha = pulse; ctx.fillStyle = a.color; ctx.fillRect(x - 1, y - 17 + bob, 3, 2); ctx.globalAlpha = 1;
+  // nom
+  ctx.font = "600 5px 'Pixelify Sans', monospace"; ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+  ctx.fillStyle = "rgba(14,16,32,.7)"; const nw = ctx.measureText(a.name).width + 4;
+  ctx.fillRect(x - nw / 2, y + 7, nw, 7);
+  ctx.fillStyle = a === selected ? "#ffc857" : "#f4f5ff"; ctx.fillText(a.name, x, y + 12.5);
+  if ((a.talking || a.hold) && !a.bubble) { ctx.fillStyle = "#fff"; for (let i = 0; i < 3; i++) if ((time * 3 | 0) % 4 > i) ctx.fillRect(x + 5 + i * 2, y - 16, 1, 1); }
+}
+function wrap(text, maxW) {
+  const words = text.split(" "), lines = []; let cur = "";
+  for (const w of words) { const t = cur ? cur + " " + w : w; if (ctx.measureText(t).width > maxW && cur) { lines.push(cur); cur = w; } else cur = t; }
+  if (cur) lines.push(cur); return lines.slice(0, 4);
+}
+function drawBubble(a) {
+  if (!a.bubble) return;
+  ctx.font = "5.2px 'Atkinson Hyperlegible', sans-serif"; ctx.textAlign = "left"; ctx.textBaseline = "top";
+  const lines = wrap(a.bubble.text, 64), lh = 6.4;
+  const w = Math.max(...lines.map(l => ctx.measureText(l).width)) + 7, h = lines.length * lh + 5;
+  let bx = Math.round(a.px - w / 2), by = Math.round(a.py - 22 - h);
+  bx = Math.max(2, Math.min(W * T - w - 2, bx)); by = Math.max(2, by);
+  ctx.fillStyle = "rgba(0,0,0,.25)"; ctx.fillRect(bx + 1, by + 1, w, h);
+  ctx.fillStyle = "#fffdf4"; ctx.fillRect(bx, by, w, h);
+  ctx.fillStyle = a.color; ctx.fillRect(bx, by, 2, h);
+  ctx.fillStyle = "#fffdf4"; ctx.beginPath(); ctx.moveTo(a.px - 3, by + h); ctx.lineTo(a.px + 1, by + h + 4); ctx.lineTo(a.px + 3, by + h); ctx.fill();
+  ctx.fillStyle = "#1c1f38";
+  lines.forEach((l, i) => ctx.fillText(l, bx + 4.5, by + 3 + i * lh));
+}
+const lamps = [];
+for (const x of [3, 9, 15, 21, 28, 33]) lamps.push([x * T + 8, 7 * T + 2], [x * T + 8, 16 * T + 2]);
+for (const y of [3, 12, 20]) lamps.push([11 * T + 2, y * T + 8], [24 * T + 14, y * T + 8]);
+function render() {
+  ctx.setTransform(S, 0, 0, S, 0, 0);
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(bg, 0, 0);
+  // fontaine
+  const fx = 18 * T, fy = 12 * T;
+  ctx.fillStyle = "#8f98b5"; ctx.beginPath(); ctx.arc(fx, fy, 14, 0, 7); ctx.fill();
+  ctx.fillStyle = "#4aa3e8"; ctx.beginPath(); ctx.arc(fx, fy, 11, 0, 7); ctx.fill();
+  ctx.strokeStyle = "rgba(255,255,255,.6)"; ctx.lineWidth = 1;
+  for (let i = 0; i < 2; i++) { const r = ((time * 6 + i * 5) % 10) + 1; ctx.globalAlpha = 1 - r / 11; ctx.beginPath(); ctx.arc(fx, fy, r, 0, 7); ctx.stroke(); }
+  ctx.globalAlpha = 1; ctx.fillStyle = "#dff1ff"; ctx.fillRect(fx - 1, fy - 6 - Math.abs(Math.sin(time * 5)) * 2, 2, 6);
+  // camion
+  if (truck) {
+    const X = 2 * T, Y = 16 * T + 4;
+    ctx.fillStyle = "rgba(0,0,0,.3)"; ctx.fillRect(X + 2, Y + 14, 34, 3);
+    ctx.fillStyle = "#e9edf5"; ctx.fillRect(X, Y, 26, 14); ctx.fillStyle = "#ff9a4d"; ctx.fillRect(X + 26, Y + 4, 10, 10);
+    ctx.fillStyle = "#9fd0ff"; ctx.fillRect(X + 30, Y + 6, 5, 4);
+    ctx.fillStyle = "#222"; for (const wx of [X + 5, X + 20, X + 31]) { ctx.beginPath(); ctx.arc(wx, Y + 15, 2.5, 0, 7); ctx.fill(); }
+    ctx.fillStyle = "#ff9a4d"; ctx.font = "600 5px 'Pixelify Sans', monospace"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("MORIBA", X + 13, Y + 7);
+  }
+  // arbres + agents triés par profondeur
+  const items = [];
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (grid[y][x] === "t") items.push({y:y * T + 14, d:() => drawTree(x, y)});
+  for (const a of A) items.push({y:a.py + 6, d:() => drawAgent(a)});
+  items.sort((p, q) => p.y - q.y).forEach(i => i.d());
+  // nuit
+  const dk = darkness();
+  if (dk > 0) {
+    ctx.fillStyle = `rgba(12,16,48,${dk})`; ctx.fillRect(0, 0, W * T, H * T);
+    ctx.globalCompositeOperation = "lighter";
+    const k = dk / .55;
+    for (const b of B) for (const [wx, wy] of b.windows || []) { ctx.fillStyle = `rgba(255,200,90,${.55 * k})`; ctx.fillRect(wx, wy, 9, 8); }
+    for (const [X, Y] of lamps) {
+      const gr = ctx.createRadialGradient(X, Y, 0, X, Y, 22);
+      gr.addColorStop(0, `rgba(255,214,130,${.35 * k})`); gr.addColorStop(1, "rgba(255,214,130,0)");
+      ctx.fillStyle = gr; ctx.fillRect(X - 22, Y - 22, 44, 44);
+    }
+    for (const a of A) { ctx.fillStyle = a.color; ctx.globalAlpha = .5 * k; ctx.beginPath(); ctx.arc(a.px, a.py - 14, 3, 0, 7); ctx.fill(); }
+    ctx.globalAlpha = 1; ctx.globalCompositeOperation = "source-over";
+  }
+  // lampadaires (poteaux)
+  for (const [X, Y] of lamps) { ctx.fillStyle = "#30344d"; ctx.fillRect(X - .5, Y - 1, 1.5, 8); ctx.fillStyle = dk > 0 ? "#ffe3a3" : "#d8dbe8"; ctx.fillRect(X - 1.5, Y - 3, 3.5, 2.5); }
+  for (const a of A) drawBubble(a);
+}
+
+/* ---------- Interface ---------- */
+let selected = AM.ada, speed = 1;
+const roster = document.getElementById("roster"), whoSel = document.getElementById("mWho");
+whoSel.add(new Option("Automatique (Hawa répartit)", "auto"));
+for (const a of A) {
+  const b = document.createElement("button");
+  b.type = "button"; b.className = "chip"; b.dataset.id = a.id;
+  b.innerHTML = `<i style="background:${a.color}"></i><span>${a.name}<small>${a.role}</small></span>`;
+  b.onclick = () => select(a);
+  roster.append(b);
+  whoSel.add(new Option(`${a.name} · ${a.role}`, a.id));
+}
+function select(a) {
+  selected = a;
+  for (const c of roster.children) c.setAttribute("aria-pressed", c.dataset.id === a.id);
+  renderAgent();
+}
+function renderAgent() {
+  const a = selected;
+  const av = document.getElementById("aAv"); av.textContent = a.name[0]; av.style.background = a.color;
+  document.getElementById("aName").textContent = a.name;
+  document.getElementById("aRole").textContent = `${a.role} · basé ${placeName[a.home].replace(/^le /, "au ").replace(/^la /, "à la ").replace(/^l'/, "à l'")}`;
+  document.getElementById("aDoing").textContent = a.activity;
+  const mem = document.getElementById("aMem"); mem.textContent = "";
+  const items = memory[a.id];
+  if (!items.length) { const li = document.createElement("li"); li.textContent = "Ses souvenirs apparaîtront ici au fil de la journée."; mem.append(li); }
+  for (const m of items.slice(0, 8)) { const li = document.createElement("li"); const b = document.createElement("b"); b.textContent = m.t + " "; li.append(b, m.text); mem.append(li); }
+}
+const stockEl = document.getElementById("stock");
+function renderStock() {
+  stockEl.textContent = "";
+  for (const p of products) {
+    const r = document.createElement("div"); r.className = "row";
+    const low = p.qty <= p.min;
+    r.innerHTML = `<span>${p.name}${pending.has(p.name) ? " · <span style='color:var(--sun)'>commandé</span>" : ""}</span><span class="q">${p.qty} / ${p.max}</span><div class="bar"><i class="${low ? "low" : ""}" style="width:${Math.min(100, p.qty / p.max * 100)}%"></i><s style="left:${p.min / p.max * 100}%"></s></div>`;
+    stockEl.append(r);
+  }
+}
+document.querySelectorAll("[data-speed]").forEach(btn => btn.onclick = () => {
+  speed = +btn.dataset.speed;
+  document.querySelectorAll("[data-speed]").forEach(b => b.setAttribute("aria-pressed", b === btn));
+});
+document.getElementById("mission").addEventListener("submit", e => {
+  e.preventDefault();
+  const t = document.getElementById("mText");
+  mission(t.value, whoSel.value); t.value = "";
+});
+cv.addEventListener("click", e => {
+  const r = cv.getBoundingClientRect();
+  const mx = (e.clientX - r.left) / r.width * W * T, my = (e.clientY - r.top) / r.height * H * T;
+  let best = null, bd = 14;
+  for (const a of A) { const d = Math.hypot(a.px - mx, a.py - 4 - my); if (d < bd) { bd = d; best = a; } }
+  if (best) select(best);
+});
+
+/* ---------- Boucle ---------- */
+let last = performance.now(), uiT = 0;
+function frame(now) {
+  const real = Math.min(.05, (now - last) / 1000); last = now;
+  const dt = real * speed;
+  time += real;
+  if (dt > 0) {
+    simMin += dt;
+    for (const a of A) updateAgent(a, dt);
+    updateConvs(dt);
+  }
+  render();
+  uiT -= real;
+  if (uiT <= 0) {
+    uiT = .25;
+    document.getElementById("clock").textContent = `Jour ${Math.floor(simMin / 1440) + 1} · ${clockStr()}`;
+    document.getElementById("sRev").textContent = fmt(econ.rev);
+    document.getElementById("sExp").textContent = fmt(econ.exp);
+    document.getElementById("sOrd").textContent = pending.size;
+    document.getElementById("sConv").textContent = econ.convs;
+    document.getElementById("aDoing").textContent = selected.activity;
+  }
+  requestAnimationFrame(frame);
+}
+function boot() {
+  drawStatic(); renderStock(); select(AM.ada);
+  log(null, "Le quartier se réveille. Les huit agents prennent leur poste.");
+  say(AM.hawa, "Bonjour l'équipe ! On ouvre.");
+  // Le sucre démarre bas : premier scénario visible très vite.
+  products[2].qty = 19;
+  assign(AM.ada, [goto("entrepot"), wait(3, "Premier inventaire de la journée"), run(() => checkStock(AM.ada))]);
+  renderStock();
+  requestAnimationFrame(frame);
+}
+(document.fonts && document.fonts.ready ? Promise.race([document.fonts.ready, new Promise(r => setTimeout(r, 1500))]) : Promise.resolve()).then(boot);
+})();
+</script>
+
+</body>
+</html>
