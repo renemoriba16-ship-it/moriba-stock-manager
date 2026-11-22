@@ -9,6 +9,7 @@
   const SIZES = ["M", "L", "XL", "XXL"];
   const CAT_LABEL = { club: "Club", selection: "Sélection" };
 
+  const PRICES = !!S.showPrices;
   const money = (n) => {
     const v = n.toLocaleString("fr-FR", { maximumFractionDigits: 2 }).replace(/\u202f|\u00a0/g, " ");
     return S.currencyAfter ? `${v} ${S.currency}` : `${S.currency}${v}`;
@@ -31,6 +32,9 @@
   /* ---------------- Static text from config ---------------- */
   $$("[data-shop-name]").forEach((el) => (el.textContent = S.name));
   $("[data-tagline]").textContent = S.tagline;
+  document.documentElement.classList.toggle("no-prices", !PRICES);
+  $$("[data-products-count]").forEach((el) => (el.dataset.count = P.length));
+  if (!PRICES) $$('#sort option[value^="price"]').forEach((o) => o.remove());
   $("#year").textContent = new Date().getFullYear();
   $("#waContact").href = `https://wa.me/${S.whatsapp}`;
   $("#mailContact").href = `mailto:${S.email}`;
@@ -179,7 +183,7 @@
         <div class="product-info">
           <span class="meta">${metaOf(p)}</span>
           <h3>${escapeXML(p.name)}</h3>
-          <div class="price">${money(p.price)} ${p.oldPrice ? `<s>${money(p.oldPrice)}</s>` : ""}</div>
+          ${PRICES ? `<div class="price">${money(p.price)} ${p.oldPrice ? `<s>${money(p.oldPrice)}</s>` : ""}</div>` : ""}
           ${p.status === "commande" ? `<div class="on-order">Sur commande</div>` : p.status === "stock" && !out && p.stock <= 5 ? `<div class="stock-low">Plus que ${p.stock} en stock</div>` : ""}
         </div>
       </article>`;
@@ -223,7 +227,7 @@
     $(".modal-visual").style.setProperty("--glow", p.colors[0] + "77");
     $("#mCat").textContent = metaOf(p);
     $("#mTitle").textContent = p.name;
-    $("#mPrice").innerHTML = `${money(p.price)}${p.oldPrice ? `<s>${money(p.oldPrice)}</s>` : ""}`;
+    $("#mPrice").innerHTML = PRICES ? `${money(p.price)}${p.oldPrice ? `<s>${money(p.oldPrice)}</s>` : ""}` : `<span class="price-ask">Prix sur demande via WhatsApp</span>`;
     const stock = $("#mStock");
     const low = p.status === "stock" && p.stock <= 5;
     stock.textContent =
@@ -249,7 +253,7 @@
   const productLink = (id) => location.href.split("#")[0] + "#maillot-" + id;
   $("#mShare").addEventListener("click", async () => {
     const p = byId(m.id), url = productLink(m.id);
-    const text = `${p.name} — ${money(p.price)} chez ${S.name}`;
+    const text = PRICES ? `${p.name} — ${money(p.price)} chez ${S.name}` : `${p.name} chez ${S.name}`;
     try {
       if (navigator.share) { await navigator.share({ title: p.name, text, url }); return; }
       await navigator.clipboard.writeText(url);
@@ -360,14 +364,14 @@
           <div class="cart-thumb">${face(p)}</div>
           <div>
             <h4>${escapeXML(p.name)}</h4>
-            <small>Taille ${it.size} • ${money(unitPrice(it))} l'unité</small>
+            <small>Taille ${it.size}${PRICES ? ` • ${money(unitPrice(it))} l'unité` : ""}</small>
             <div class="qty"><button data-act="minus" aria-label="Moins">−</button><span>${it.qty}</span><button data-act="plus" aria-label="Plus">+</button></div>
           </div>
-          <div><div class="line-price">${money(unitPrice(it) * it.qty)}</div><button class="rm" data-act="rm">Retirer</button></div>
+          <div>${PRICES ? `<div class="line-price">${money(unitPrice(it) * it.qty)}</div>` : ""}<button class="rm" data-act="rm">Retirer</button></div>
         </li>`;
       }).join("");
     }
-    $("#total").textContent = money(total);
+    $("#total").textContent = PRICES ? money(total) : `${count} maillot${count > 1 ? "s" : ""}`;
     $("#checkout").disabled = !cart.length;
   }
 
@@ -411,13 +415,13 @@
     const total = totalOf();
     const lines = cart.map((it) => {
       const p = byId(it.id);
-      return `• ${it.qty} × ${p.name} (taille ${it.size}) : ${money(unitPrice(it) * it.qty)}`;
+      return `• ${it.qty} × ${p.name} (taille ${it.size})${PRICES ? ` : ${money(unitPrice(it) * it.qty)}` : ""}`;
     });
     const msg = [
       `Bonjour ${S.name} 👋, je souhaite commander :`, "", ...lines, "",
-      `*Total maillots : ${money(total)}*`, "",
+      ...(PRICES ? [`*Total maillots : ${money(total)}*`, ""] : []),
       `Nom : ${name}`, `Lieu de livraison : ${city}`, "",
-      "Merci de me confirmer le prix de la livraison 🙏",
+      PRICES ? "Merci de me confirmer le prix de la livraison 🙏" : "Merci de me confirmer le prix, le délai et la livraison 🙏",
     ].join("\n");
     window.open(`https://wa.me/${S.whatsapp}?text=${encodeURIComponent(msg)}`, "_blank", "noopener");
   });

@@ -36,7 +36,8 @@ Site vitrine animé pour la vente de maillots, 100 % statique (HTML/CSS/JS, aucu
 **Fonctionnalités**
 - Hero animé : titre qui monte, maillot 3D (sur ordinateur uniquement, chargé après le reste), compteurs, marquee
 - Catalogue avec filtres (Clubs / Sélections), recherche et tri ; les maillots se retournent au survol
-- Prix unique : tous les maillots à 180 000 GNF
+- Prix masqués (« Prix sur demande via WhatsApp ») ; pour les réafficher : `showPrices: true` dans `config.js`
+  (penser alors à remettre le prix dans le bandeau défilant de `index.html` et dans l'image de partage)
 - Fiche produit : choix de taille et quantité
 - Panier animé (sauvegardé dans le navigateur), gestion du stock ; la taille est toujours demandée
 - Guide des tailles, bloc « Qui sommes-nous » et conditions de vente

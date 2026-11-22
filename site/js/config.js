@@ -10,7 +10,8 @@ window.SHOP = {
   whatsapp: "224626759433",  // numéro WhatsApp au format international, sans + ni espaces
   email: "renemoriba16@gmail.com",
   instagram: "https://instagram.com/rene_moriba",
-  price: 180000,            // prix unique de tous les maillots (en GNF)
+  showPrices: false,        // false = aucun prix affiché (prix donné sur WhatsApp) ; true = prix visibles
+  price: 180000,            // prix unique de tous les maillots (en GNF), utilisé si showPrices: true
 };
 
 /* ---------------------------------------------------------

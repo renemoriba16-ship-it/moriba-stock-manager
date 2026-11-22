@@ -402,6 +402,7 @@ h3 { font-size: 1.6rem; }
 .product-media.photo-light .jersey-photo { object-fit: contain; padding: 6%; filter: none; }
 .product-media.photo-cover .jersey-photo, .jersey-photo.cover { object-fit: cover; filter: none; }
 .product-media.photo-light::after { background: linear-gradient(115deg, transparent 40%, rgba(255, 255, 255, .55) 50%, transparent 60%); }
+.price-ask { font-size: 1rem; font-weight: 600; color: var(--accent); }
 .on-order { color: var(--accent); font-size: .78rem; margin-top: 6px; font-weight: 600; }
 .badge.soon { background: #ffd400; color: #111; }
 .modal-visual .flip.has-photo { width: min(380px, 100%); }
