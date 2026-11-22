@@ -9,7 +9,7 @@ window.SHOP = {
   currencyAfter: true,      // true => "35 €", false => "€35"
   whatsapp: "224626759433",  // numéro WhatsApp au format international, sans + ni espaces
   email: "renemoriba16@gmail.com",
-  instagram: "https://instagram.com/ruskov",
+  instagram: "https://instagram.com/rene_moriba",
   price: 180000,            // prix unique de tous les maillots (en GNF)
 };
 
