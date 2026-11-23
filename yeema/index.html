@@ -747,7 +747,7 @@ if (renderer) {
   const manager = new THREE.LoadingManager();
   manager.onProgress = (u, a, b) => { const p = a / b; loadBar.style.transform = `scaleX(${p})`; loadPct.textContent = `Entrée dans la jungle · ${Math.round(p * 100)} %`; };
   const gltf = new GLTFLoader(manager);
-  const load = f => new Promise((res, rej) => gltf.load(`assets/3d/${f}.glb`, res, undefined, rej));
+  const load = f => new Promise((res, rej) => gltf.load(`assets/3d/${f}.json`, res, undefined, rej));
 
   let bottle, dropper, glow;
   Promise.all([...PLANTS.map(p => load(p.file)), load('rock'), load('bottle')]).then(models => {
