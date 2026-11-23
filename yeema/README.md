@@ -36,3 +36,7 @@ s'écartent autour du pointeur ; le vent s'intensifie quand on bouge.
   arbre géant à contreforts, liane, rocher moussu et flacon d'huile.
 - Générés par `blender/jungle.py <dossier_scripts> <dossier_sortie>`.
 - Le vent et l'écartement des feuilles sont calculés dans le vertex shader (instanciation GPU).
+- Faune et fleurs (`blender/jungle_life.py`) : hibiscus, orchidées, papillons qui fuient le pointeur,
+  aras perchés qui s'envolent quand on approche ou qu'on clique dessus.
+- Son d'ambiance synthétisé en Web Audio (vent dans les feuilles, insectes, chants d'oiseaux, cris d'aras),
+  activé par le bouton « Son de la jungle » (aucun fichier audio).

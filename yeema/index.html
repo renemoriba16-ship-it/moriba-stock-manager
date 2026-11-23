@@ -104,6 +104,15 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
   color: rgba(241, 238, 224, .8); display: flex; align-items: center; gap: 10px; pointer-events: none; }
 .hint::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--honey); animation: pulse 2s infinite; }
 @keyframes pulse { 50% { transform: scale(1.8); opacity: .3; } }
+.sound { position: absolute; z-index: 6; right: var(--gutter-r); bottom: calc(5vh + 34px); display: inline-flex; align-items: center; gap: 10px; padding: 10px 16px;
+  border-radius: 999px; border: 1px solid rgba(241, 238, 224, .45); background: rgba(13, 26, 18, .35); color: var(--mist); font-size: .85rem;
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.sound:hover { background: rgba(13, 26, 18, .6); }
+.sound i { display: inline-flex; align-items: flex-end; gap: 2px; height: 14px; }
+.sound i b { width: 3px; height: 4px; background: currentColor; border-radius: 1px; transition: height .3s; }
+.sound[aria-pressed="true"] i b { animation: eq 1s ease-in-out infinite; }
+.sound[aria-pressed="true"] i b:nth-child(2) { animation-delay: -.3s; } .sound[aria-pressed="true"] i b:nth-child(3) { animation-delay: -.6s; } .sound[aria-pressed="true"] i b:nth-child(4) { animation-delay: -.15s; }
+@keyframes eq { 50% { height: 14px; } }
 .progress { position: absolute; right: var(--gutter-r); bottom: 5vh; z-index: 5; display: flex; align-items: center; gap: 12px; font-family: var(--f-mono); font-size: .75rem; letter-spacing: .1em; color: rgba(241, 238, 224, .75); }
 .progress .bar { width: 120px; height: 1px; background: rgba(241, 238, 224, .25); position: relative; overflow: hidden; }
 .progress .bar i { position: absolute; inset: 0; background: var(--mist); transform-origin: left; transform: scaleX(0); }
@@ -237,7 +246,8 @@ li.open .ing-detail { grid-template-rows: 1fr; }
   .beat { max-width: none; left: var(--gutter); right: var(--gutter-r); text-align: left; }
   .beat-1, .beat-4 { bottom: 5svh; }
   .beat-2, .beat-3 { top: auto; bottom: 6svh; }
-  .hint { left: var(--gutter); right: auto; }
+  .hint { left: var(--gutter); right: auto; max-width: calc(100% - 32px); }
+  .sound { top: calc(76px + env(safe-area-inset-top, 0px) + 28px); bottom: auto; left: var(--gutter); right: auto; padding: 8px 12px; }
   .beat h1, .beat h2 { font-size: var(--step-2); }
   .beat p { font-size: .95rem; }
   .progress { display: none; }
@@ -306,7 +316,8 @@ li.open .ing-detail { grid-template-rows: 1fr; }
           </div>
         </div>
       </div>
-      <div class="hint" id="hint" aria-hidden="true">Bougez : les feuilles s'écartent</div>
+      <div class="hint" id="hint" aria-hidden="true">Bougez : les feuilles s'écartent et les papillons s'envolent</div>
+      <button class="sound" id="sound" type="button" aria-pressed="false"><i aria-hidden="true"><b></b><b></b><b></b><b></b></i><span>Son de la jungle</span></button>
       <div class="progress" aria-hidden="true"><span>Sentier</span><span class="bar"><i id="bar"></i></span></div>
       <div class="loader" id="loader"><b>yeema</b><span id="loadPct">Entrée dans la jungle · 0 %</span><span class="lbar"><i id="loadBar"></i></span></div>
     </div>
@@ -625,7 +636,7 @@ if (renderer) {
   const path = new THREE.CatmullRomCurve3([
     new THREE.Vector3(0, 1.75, 9), new THREE.Vector3(0.9, 1.6, 0), new THREE.Vector3(-1.3, 1.8, -9),
     new THREE.Vector3(0.7, 1.55, -18), new THREE.Vector3(-0.9, 1.7, -27), new THREE.Vector3(0.6, 1.6, -36),
-    new THREE.Vector3(0.1, 1.4, -43.5), new THREE.Vector3(0, 1.2, -47.6)
+    new THREE.Vector3(0.1, 1.45, -43.6), new THREE.Vector3(0, 1.3, -48.0)
   ], false, 'catmullrom', 0.4);
   const trail = path.getSpacedPoints(240);
   const distToTrail = (x, z) => { let d = 1e9; for (const p of trail) d = Math.min(d, Math.hypot(p.x - x, p.z - z)); return d; };
@@ -670,7 +681,9 @@ if (renderer) {
     { file: 'colocasia', n: 90,  min: 1.4, max: 9,  s: [0.8, 1.45], tilt: 0.05 },
     { file: 'monstera',  n: 100, min: 1.5, max: 9,  s: [0.9, 1.6],  tilt: 0.05 },
     { file: 'fern',      n: 300, min: 0.8, max: 10, s: [0.7, 1.45], tilt: 0.08 },
-    { file: 'liana',     n: 50,  min: 1.1, max: 8,  s: [0.8, 1.15], tilt: 0.0, hang: true },
+    { file: 'liana',     n: 72,  min: 1.1, max: 8,  s: [0.8, 1.15], tilt: 0.0, hang: true },
+    { file: 'hibiscus',  n: 46,  min: 1.3, max: 8,  s: [0.9, 1.4],  tilt: 0.05 },
+    { file: 'orchid',    n: 60,  min: 0.9, max: 7,  s: [1.3, 1.9],  tilt: 0.05 },
   ];
   const place = (pl) => {
     const out = []; let guard = 0; const n = Math.round(pl.n * Q);
@@ -688,11 +701,12 @@ if (renderer) {
       out.push(m);
     }
     // a ring of ferns and monsteras frames the clearing
-    if (pl.file === 'fern' || pl.file === 'monstera') {
-      const k = pl.file === 'fern' ? 22 : 9;
+    const RING = { fern: [22, 3.0, 4.2], monstera: [9, 4.2, 5.6], orchid: [12, 2.5, 3.2], hibiscus: [7, 3.4, 4.4] }[pl.file];
+    if (RING) {
+      const k = RING[0];
       for (let i = 0; i < k; i++) {
         const a = i / k * Math.PI * 2 + R(-.12, .12); if (Math.abs(a - Math.PI * 1.5) < 0.75) continue; // leave the trail side open
-        const r = pl.file === 'fern' ? R(3.0, 4.2) : R(4.2, 5.6);
+        const r = R(RING[1], RING[2]);
         const m = new THREE.Matrix4(), sc = R(pl.s[0], pl.s[1]) * 1.1;
         m.compose(new THREE.Vector3(CLEAR.x + Math.cos(a) * r, -0.05, CLEAR.z - Math.sin(a) * r), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, R(0, 6.28), 0)), new THREE.Vector3(sc, sc, sc));
         out.push(m);
@@ -749,8 +763,8 @@ if (renderer) {
   const gltf = new GLTFLoader(manager);
   const load = f => new Promise((res, rej) => gltf.load(`assets/3d/${f}.json`, res, undefined, rej));
 
-  let bottle, dropper, glow;
-  Promise.all([...PLANTS.map(p => load(p.file)), load('rock'), load('bottle')]).then(models => {
+  let bottle, dropper, glow; const flies = [], birds = [];
+  Promise.all([...PLANTS.map(p => load(p.file)), load('rock'), load('bottle'), load('butterfly'), load('macaw')]).then(models => {
     PLANTS.forEach((pl, i) => {
       const root = models[i].scene; root.updateMatrixWorld(true);
       const box = new THREE.Box3().setFromObject(root), H = Math.max(0.5, box.max.y - Math.min(0, box.min.y), -box.min.y);
@@ -759,14 +773,16 @@ if (renderer) {
       root.traverse(o => {
         if (!o.isMesh) return;
         const mat = o.material.clone(); mat.side = THREE.DoubleSide; mat.envMapIntensity = .25;
-        const leafy = /leaf|moss/.test(mat.name);
+        const petal = /petal/.test(mat.name), leafy = petal || /leaf|moss/.test(mat.name);
         if (leafy) { mat.roughness = .62; }
+        if (petal) { mat.emissive = mat.color.clone().multiplyScalar(.22); }   // flowers glow a little through the haze
         windify(mat, H, leafy);
         const im = new THREE.InstancedMesh(o.geometry, mat, mats.length);
         mats.forEach((m, k) => {
           im.setMatrixAt(k, m.clone().multiply(o.matrixWorld));
           col.setHSL(leafy ? R(.22, .3) : .08, leafy ? R(.35, .6) : .2, R(.78, 1.05)); // variation per plant
-          im.setColorAt(k, leafy ? col.multiplyScalar(1.9) : new THREE.Color(R(.85, 1.1), R(.85, 1.05), R(.85, 1)));
+          const v = R(.85, 1.12);
+          im.setColorAt(k, petal ? new THREE.Color(v, v, v) : leafy ? col.multiplyScalar(1.9) : new THREE.Color(R(.85, 1.1), R(.85, 1.05), R(.85, 1)));
         });
         im.instanceMatrix.needsUpdate = true; im.frustumCulled = false; scene.add(im);
       });
@@ -778,13 +794,40 @@ if (renderer) {
     const b = models[PLANTS.length + 1].scene;
     const bb = new THREE.Box3().setFromObject(b), bh = bb.max.y - bb.min.y;
     bottle = new THREE.Group(); bottle.add(b); b.position.y = -bb.min.y;
-    bottle.scale.setScalar(1.2 / bh); bottle.position.set(CLEAR.x, rb.max.y - .04, CLEAR.z); scene.add(bottle);
+    bottle.scale.setScalar(1.55 / bh); bottle.position.set(CLEAR.x, rb.max.y - .04, CLEAR.z); scene.add(bottle);
     dropper = new THREE.Group(); b.add(dropper);
     const parts = []; b.traverse(o => { if (o.isMesh && /Collar|Bulb|Pipette|PipOil/.test(o.name)) parts.push(o); });
     parts.forEach(o => dropper.attach(o));
     b.traverse(o => { if (o.isMesh && o.material) { o.material.envMapIntensity = 1.3; if (o.material.transmission > 0) { o.material.thickness = .35; o.material.roughness = .04; } } });
     const spot = new THREE.SpotLight(0xffd9a0, 90, 0, .42, .7, 2); spot.position.set(CLEAR.x + 1, 9, CLEAR.z + 1); spot.target = bottle; scene.add(spot, spot.target);
     glow = new THREE.PointLight(0xffb866, 3, 6, 2); glow.position.set(CLEAR.x + .6, 1.4, CLEAR.z + 1.2); scene.add(glow);
+    // ---- butterflies: drift along the trail and flee the pointer ----
+    const COLORS = [0x2a73ff, 0xff8a1e, 0xffd23a, 0xf4f1e8, 0x22c3a6, 0x2a73ff, 0xff5a3c];
+    const NB = Math.round(20 * (small ? .6 : 1));
+    for (let i = 0; i < NB; i++) {
+      const outer = new THREE.Group(), inner = models[PLANTS.length + 2].scene.clone(true); inner.rotation.y = Math.PI; outer.add(inner);
+      const c = new THREE.Color(COLORS[i % COLORS.length]);
+      const m = new THREE.MeshStandardMaterial({ color: c, emissive: c.clone().multiplyScalar(.35), roughness: .35, metalness: .25, side: THREE.DoubleSide });
+      const wings = {};
+      inner.traverse(o => { if (o.isMesh) { if (/Wing/.test(o.name)) o.material = m; wings[o.name.replace(/[^A-Za-z]/g, '')] = o; } });
+      const pp = path.getPointAt(Math.min(.97, (i + .5) / NB)), side = i % 2 ? 1 : -1;
+      outer.userData = { a: new THREE.Vector3(pp.x + side * R(.5, 2), R(1.1, 2.5), pp.z + R(-1.5, 1.5)), ph: R(0, 6.28), sp: R(.6, 1.1), flee: new THREE.Vector3(), wR: wings.WingR, wL: wings.WingL, last: new THREE.Vector3() };
+      outer.scale.setScalar(R(.32, .42)); scene.add(outer); flies.push(outer);
+    }
+    // ---- scarlet macaws perched along the trail; they take off as you approach or click them ----
+    const perchMat = new THREE.MeshStandardMaterial({ color: 0x3b2a1c, roughness: .9 });
+    [.16, .34, .52, .7, .83].forEach((pt, i) => {
+      const pp = path.getPointAt(pt), side = i % 2 ? 1 : -1;
+      const home = new THREE.Vector3(pp.x + side * R(1.8, 2.6), R(2.6, 3.8), pp.z - R(1, 2.5));
+      const branch = new THREE.Mesh(new THREE.CylinderGeometry(.035, .05, 2.4, 8), perchMat); branch.rotation.z = Math.PI / 2; branch.rotation.y = R(-.5, .5);
+      branch.position.copy(home).add(new THREE.Vector3(0, -.11, 0)); scene.add(branch);
+      const outer = new THREE.Group(), inner = models[PLANTS.length + 3].scene.clone(true); outer.add(inner);
+      const parts = {}; inner.traverse(o => { if (o.isMesh || o.name) parts[o.name] = o; });
+      inner.traverse(o => { if (o.isMesh) { o.material = o.material.clone(); o.material.envMapIntensity = .4; } });
+      outer.position.copy(home); outer.lookAt(pp.x, home.y, pp.z); outer.rotateY(Math.PI); outer.scale.setScalar(1.15); scene.add(outer);
+      outer.userData = { home: home.clone(), pt, side, state: 'perched', t0: 0, inner, wR: parts.WingR, wL: parts.WingL, head: parts.MHead, curve: null, face: outer.quaternion.clone() };
+      birds.push(outer);
+    });
     loader.classList.add('done'); start();
   }).catch(err => { console.error(err); fail(); });
 
@@ -799,7 +842,20 @@ if (renderer) {
   };
   addEventListener('pointermove', e => onPtr(e.clientX, e.clientY, e.movementX || 0, e.movementY || 0), { passive: true });
   addEventListener('touchmove', e => { const p = e.touches[0]; if (p) onPtr(p.clientX, p.clientY, 6, 6); }, { passive: true });
-  canvas.addEventListener('pointerdown', () => { gust = 1.6; });
+  const clickRay = new THREE.Raycaster();
+  canvas.addEventListener('pointerdown', e => {
+    gust = 1.6;
+    const r = canvas.getBoundingClientRect();
+    clickRay.setFromCamera(new THREE.Vector2((e.clientX - r.left) / r.width * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), camera);
+    birds.forEach(b => { if (b.userData.state === 'perched' && clickRay.ray.distanceToPoint(b.position) < .7) takeOff(b); });
+  });
+  function takeOff(b) {
+    const d = b.userData; if (d.state !== 'perched') return;
+    d.state = 'flying'; d.t0 = clock.elapsedTime;
+    const away = new THREE.Vector3(d.side * R(5, 8), R(4, 6), R(-6, -12));
+    d.curve = new THREE.CatmullRomCurve3([d.home.clone(), d.home.clone().add(new THREE.Vector3(d.side * 1.2, 1.2, -1.5)), d.home.clone().add(away.clone().multiplyScalar(.55)), d.home.clone().add(away)]);
+    window.yeemaSound && window.yeemaSound.squawk(d.side);
+  }
 
   const resize = () => {
     const w = stage.querySelector('.stage-pin').clientWidth, h = stage.querySelector('.stage-pin').clientHeight;
@@ -809,7 +865,7 @@ if (renderer) {
 
   let visible = true;
   new IntersectionObserver(es => { visible = es[0].isIntersecting; }).observe(stage);
-  const ray = new THREE.Raycaster(), tmp = new THREE.Vector3(), ahead = new THREE.Vector3(), bottleT = new THREE.Vector3(CLEAR.x, 1.0, CLEAR.z);
+  const ray = new THREE.Raycaster(), tmp = new THREE.Vector3(), ahead = new THREE.Vector3(), bottleT = new THREE.Vector3(CLEAR.x, 1.15, CLEAR.z);
   const clock = new THREE.Clock();
   function frame() {
     requestAnimationFrame(frame);
@@ -835,6 +891,39 @@ if (renderer) {
     U.uWind.value = (reduce ? .25 : .55 + .25 * Math.sin(time * .4)) + gust;
     U.uTime.value = time;
     rays.forEach(r => { r.rotation.set(0, Math.atan2(camera.position.x - r.position.x, camera.position.z - r.position.z), 0); r.rotateX(r.userData.tilt); r.material.opacity = r.userData.op * (.75 + .25 * Math.sin(time * .6 + r.userData.ph)); });
+    // butterflies
+    flies.forEach(f => {
+      const d = f.userData, tt = time * d.sp + d.ph;
+      const toPtr = f.position.clone().sub(U.uPointer.value), dist = toPtr.length();
+      if (dist < 1.5 && U.uPush.value > .3) d.flee.addScaledVector(toPtr.normalize(), (1.5 - dist) * dt * 6);
+      d.flee.multiplyScalar(Math.pow(.25, dt)); if (d.flee.length() > 3) d.flee.setLength(3);
+      d.last.copy(f.position);
+      f.position.set(d.a.x + Math.sin(tt * .9) * 1.3 + d.flee.x, d.a.y + Math.sin(tt * 1.7) * .45 + Math.sin(tt * 5.3) * .06 + d.flee.y, d.a.z + Math.cos(tt * .7) * 1.4 + d.flee.z);
+      const vel = f.position.clone().sub(d.last); if (vel.lengthSq() > 1e-8) f.lookAt(f.position.clone().add(vel));
+      const flap = reduce ? .4 : Math.sin(time * 24 + d.ph) * .95;
+      if (d.wR) d.wR.rotation.z = flap; if (d.wL) d.wL.rotation.z = -flap;
+    });
+    // macaws
+    birds.forEach(b => {
+      const d = b.userData;
+      if (d.state === 'perched') {
+        d.inner.rotation.x = .85;                                      // sitting upright
+        if (d.wR) { d.wR.rotation.z = -1.25; d.wL.rotation.z = 1.25; } // wings folded
+        if (d.head) d.head.rotation.y = Math.sin(time * 1.3 + d.pt * 20) * .5;
+        if (camera.position.distanceTo(d.home) < 3.8) takeOff(b);
+        if (U.uPush.value > .5 && U.uPointer.value.distanceTo(d.home) < .6) takeOff(b);
+      } else if (d.state === 'flying') {
+        const u = Math.min(1, (time - d.t0) / 3.8), p = d.curve.getPointAt(u), q = d.curve.getPointAt(Math.min(1, u + .02));
+        b.position.copy(p); b.lookAt(q); b.rotateY(Math.PI);
+        d.inner.rotation.x = THREE.MathUtils.lerp(.85, -.15, Math.min(1, u * 5));
+        const flap = Math.sin(time * 13) * .9;
+        if (d.wR) { d.wR.rotation.z = flap; d.wL.rotation.z = -flap; }
+        if (u >= 1) { d.state = 'gone'; b.visible = false; }
+      } else if (t < d.pt - .1 || t > d.pt + .35) {                    // come back when you walk away
+        d.state = 'perched'; b.visible = true; b.position.copy(d.home); b.quaternion.copy(d.face);
+      }
+    });
+    window.yeemaSound && window.yeemaSound.wind(U.uWind.value);
     if (bottle) {
       bottle.rotation.y = reduce ? .3 : time * .25;
       dropper.position.y = THREE.MathUtils.smoothstep(t, .9, 1) * 1.2;
@@ -843,6 +932,60 @@ if (renderer) {
     renderer.render(scene, camera);
   }
   function start() { resize(); frame(); }
+
+  // ---- jungle soundscape: leaves, insects, birdsong and macaw calls, all synthesised ----
+  const soundBtn = document.getElementById('sound');
+  let AC = null, master, rustle;
+  const noiseBuf = ctx => { const b = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate), d = b.getChannelData(0); let l = 0;
+    for (let i = 0; i < d.length; i++) { const w = Math.random() * 2 - 1; l = (l + .02 * w) / 1.02; d[i] = l * 3.5 + w * .15; } return b; };
+  const loopNoise = (ctx, type, f, q, g) => { const src = ctx.createBufferSource(); src.buffer = noiseBuf(ctx); src.loop = true;
+    const fl = ctx.createBiquadFilter(); fl.type = type; fl.frequency.value = f; fl.Q.value = q; const gn = ctx.createGain(); gn.gain.value = g;
+    src.connect(fl).connect(gn).connect(master); src.start(); return gn; };
+  const chirp = () => {
+    if (!AC || AC.state !== 'running') return;
+    const now = AC.currentTime, pan = AC.createStereoPanner(); pan.pan.value = Math.random() * 1.6 - .8; pan.connect(master);
+    const kind = Math.random(), notes = kind < .5 ? 2 + Math.floor(Math.random() * 4) : 1;
+    for (let n = 0; n < notes; n++) {
+      const o = AC.createOscillator(), g = AC.createGain(), t0 = now + n * (kind < .5 ? .13 : 0);
+      const f0 = kind < .5 ? 2600 + Math.random() * 1500 : 1900 + Math.random() * 600;
+      o.type = 'sine'; o.frequency.setValueAtTime(f0, t0);
+      if (kind < .5) o.frequency.exponentialRampToValueAtTime(f0 * 1.35, t0 + .07);
+      else { o.frequency.exponentialRampToValueAtTime(f0 * .5, t0 + .45); }
+      g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(.05, t0 + .015); g.gain.exponentialRampToValueAtTime(.0005, t0 + (kind < .5 ? .1 : .5));
+      o.connect(g).connect(pan); o.start(t0); o.stop(t0 + .6);
+    }
+    setTimeout(chirp, 900 + Math.random() * 3800);
+  };
+  window.yeemaSound = {
+    wind: w => { if (rustle) rustle.gain.setTargetAtTime(.025 + w * .05, AC.currentTime, .3); },
+    squawk: side => {
+      if (!AC || AC.state !== 'running') return;
+      const now = AC.currentTime, pan = AC.createStereoPanner(); pan.pan.value = side * .6; pan.connect(master);
+      [0, .28, .5].forEach(dly => {
+        const o = AC.createOscillator(), f = AC.createBiquadFilter(), g = AC.createGain(), t0 = now + dly;
+        o.type = 'sawtooth'; o.frequency.setValueAtTime(900 + Math.random() * 300, t0); o.frequency.linearRampToValueAtTime(620, t0 + .2);
+        f.type = 'bandpass'; f.frequency.value = 1500; f.Q.value = 3;
+        g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(.12, t0 + .02); g.gain.exponentialRampToValueAtTime(.001, t0 + .22);
+        o.connect(f).connect(g).connect(pan); o.start(t0); o.stop(t0 + .25);
+      });
+    }
+  };
+  soundBtn.addEventListener('click', async () => {
+    if (!AC) {
+      AC = new (window.AudioContext || window.webkitAudioContext)(); master = AC.createGain(); master.gain.value = 0; master.connect(AC.destination);
+      rustle = loopNoise(AC, 'bandpass', 900, .6, .05);           // leaves in the wind
+      loopNoise(AC, 'lowpass', 260, .7, .05);                       // distant canopy
+      const ins = loopNoise(AC, 'bandpass', 5200, 9, .0);           // cicadas, pulsing
+      const lfo = AC.createOscillator(), lg = AC.createGain(); lfo.frequency.value = 23; lg.gain.value = .012; lfo.connect(lg).connect(ins.gain); lfo.start();
+      chirp();
+    }
+    const on = soundBtn.getAttribute('aria-pressed') !== 'true';
+    if (on) await AC.resume();
+    master.gain.setTargetAtTime(on ? .9 : 0, AC.currentTime, .4);
+    soundBtn.setAttribute('aria-pressed', on); soundBtn.querySelector('span').textContent = on ? 'Son activé' : 'Son de la jungle';
+  });
+  // fade the soundscape out when the jungle scrolls away
+  new IntersectionObserver(es => { if (AC && soundBtn.getAttribute('aria-pressed') === 'true') master.gain.setTargetAtTime(es[0].isIntersecting ? .9 : 0, AC.currentTime, .6); }).observe(stage);
 }
 </script>
 <!--ARTIFACT-END-->
