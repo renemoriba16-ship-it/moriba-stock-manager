@@ -9,3 +9,8 @@ if [ -f $S/render/blob/b_0096.jpg ]; then
   ffmpeg -loglevel error -y -i $S/render/blob/b_0001.jpg -vf scale=800:800 -q:v 4 $R/oil-loop.jpg
 fi
 du -sh $R
+# plants
+P=$S/render/plants; mkdir -p $R/plants/palm_a $R/plants/palm_b
+python3 $S/trim.py $P/baobab.png:$R/plants/baobab.webp:0.02 $P/aloe.png:$R/plants/aloe.webp:0.02 $P/grass.png:$R/plants/grass.webp:0.0 $P/shadow.png:$R/plants/shadow.webp:0.02
+for d in palm_a palm_b; do for f in $P/$d/f_*.png; do [ -f "$f" ] || continue; b=$(basename $f .png); [ -f $R/plants/$d/$b.webp ] || ffmpeg -loglevel error -y -i $f -c:v libwebp -quality 74 $R/plants/$d/$b.webp; done; done
+du -sh $R/plants

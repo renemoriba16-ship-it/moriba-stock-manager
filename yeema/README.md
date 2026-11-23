@@ -24,3 +24,10 @@ python3 blender/hero.py <dossier> anim 1 120
 python3 blender/products.py <dossier>
 python3 blender/blob.py <dossier>
 ```
+
+## Environnement savane
+
+- `assets/plants/palm_a`, `palm_b` — deux cocotiers animés (48 images chacun, boucle de vent) lus dans un canvas : la vitesse du vent suit les mouvements de la souris, un clic secoue le palmier et fait tomber des folioles.
+- `assets/plants/baobab.webp`, `aloe.webp`, `grass.webp` — baobabs à l'horizon, aloe et herbe de savane au premier plan.
+- `assets/plants/shadow.webp` — ombre de palmes qui ondule sur la boutique et le rituel.
+- Généré par `blender/plants.py <dossier> palm,baobab,aloe,grass,shadow`.

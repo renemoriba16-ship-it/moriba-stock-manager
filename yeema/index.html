@@ -80,14 +80,13 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 #bottle { position: relative; z-index: 2; height: min(92svh, 125vw); width: auto; aspect-ratio: 960 / 1200;
   -webkit-mask-image: linear-gradient(to right, transparent, #000 22%, #000 78%, transparent), linear-gradient(to bottom, transparent, #000 4%, #000 82%, transparent);
   -webkit-mask-composite: source-in; mask-image: linear-gradient(to right, transparent, #000 22%, #000 78%, transparent), linear-gradient(to bottom, transparent, #000 4%, #000 82%, transparent); mask-composite: intersect; }
-.beats { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+.beats { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
 .beat { position: absolute; max-width: 30ch; }
 .beat h1, .beat h2 { font-size: var(--step-3); }
 .beat p { color: var(--ink-soft); margin: 16px 0 0; max-width: 34ch; }
 .beat .eyebrow { margin-bottom: 14px; }
 .beat-1 { left: var(--gutter); bottom: 12vh; }
-.beat-2 { right: var(--gutter-r); top: 26vh; text-align: right; }
-.beat-2 p { margin-left: auto; }
+.beat-2 { left: var(--gutter); top: 24vh; }
 .beat-3 { left: var(--gutter); top: 24vh; }
 .beat-2, .beat-3 { opacity: 0; }
 .cta-row { display: flex; gap: 12px; margin-top: 26px; pointer-events: auto; flex-wrap: wrap; }
@@ -103,6 +102,41 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 .progress .bar i { position: absolute; inset: 0; background: var(--ink); transform-origin: left; transform: scaleX(0); }
 .loader { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; background: var(--sand); font-family: var(--f-mono); font-size: .8rem; letter-spacing: .14em; color: var(--ink-soft); transition: opacity .8s; }
 .loader.done { opacity: 0; pointer-events: none; }
+
+/* ---------- Savanna environment (Blender renders) ---------- */
+.sky { position: absolute; inset: 0; z-index: 0; background: linear-gradient(to bottom, #e9dccb 0%, #ecd6ba 38%, #edc9a0 62%, #e6cfb2 78%, var(--sand) 100%); }
+.sun { position: absolute; left: 50%; top: 18%; width: min(46vmin, 520px); aspect-ratio: 1; translate: -50% 0; border-radius: 50%; z-index: 0;
+  background: radial-gradient(closest-side, #f7c57f 0%, #f2b06a 55%, rgba(242, 176, 106, .35) 72%, rgba(242, 176, 106, 0) 100%); }
+.wordmark { z-index: 0; }
+.horizon { position: absolute; inset: auto 0 0 0; height: 48%; z-index: 1; pointer-events: none; }
+.horizon img { position: absolute; bottom: 14%; height: auto; opacity: .5; filter: saturate(.55) sepia(.25) blur(.6px); }
+.horizon .bb1 { left: 27%; width: min(13vw, 190px); opacity: .42; }
+.horizon .bb2 { left: 3%; width: min(9vw, 130px); opacity: .22; filter: saturate(.4) sepia(.3) blur(1.2px); }
+.horizon .bb3 { right: 26%; width: min(18vw, 260px); opacity: .38; }
+.palm { position: absolute; z-index: 1; height: auto; cursor: grab; touch-action: pan-y; transform-origin: 50% 100%; will-change: transform; }
+.palm:active { cursor: grabbing; }
+.palm-r { right: -7vw; bottom: -3svh; height: min(108svh, 150vw); aspect-ratio: 860 / 1120; }
+.palm-b { right: 17vw; bottom: 6svh; height: min(70svh, 96vw); aspect-ratio: 860 / 1120; filter: saturate(.75) brightness(1.04) blur(.4px); opacity: .9; }
+.grass { position: absolute; left: -2%; right: -2%; bottom: -1svh; z-index: 4; pointer-events: none; height: clamp(70px, 13svh, 150px);
+  background: url(assets/plants/grass.webp) repeat-x bottom center / auto 100%; transform-origin: 50% 100%; }
+.aloe { position: absolute; z-index: 4; left: 27vw; bottom: -1svh; width: min(24vw, 320px); height: auto; pointer-events: none; transform-origin: 50% 100%; }
+.leafbits { position: absolute; inset: 0; z-index: 4; pointer-events: none; overflow: hidden; }
+.leafbits svg { position: absolute; width: 52px; height: 18px; }
+.hint { position: absolute; right: max(16px, 4vw); top: 16svh; z-index: 3; font-family: var(--f-mono); font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-soft);
+  display: flex; align-items: center; gap: 10px; pointer-events: none; }
+.hint::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--amber); animation: pulse 2s infinite; }
+@keyframes pulse { 50% { transform: scale(1.8); opacity: .3; } }
+/* dappled palm shadows over the shop and ritual */
+.leafshade { position: absolute; inset: -10%; z-index: 3; pointer-events: none; background: url(assets/plants/shadow.webp) no-repeat; background-size: min(1100px, 95vw);
+  mix-blend-mode: multiply; opacity: .16; filter: blur(7px); animation: shade 11s ease-in-out infinite alternate; }
+.leafshade.b { background-position: 105% 70%; animation-duration: 14s; animation-delay: -4s; opacity: .12; }
+@keyframes shade { from { transform: rotate(-1.5deg) translate3d(0, 0, 0); } to { transform: rotate(2deg) translate3d(1.5%, -1%, 0); } }
+.shop, .ritual { position: relative; overflow: hidden; }
+.shop .wrap, .ritual .wrap { position: relative; }
+/* footer savanna silhouette */
+.footer-scene { position: relative; height: clamp(120px, 18vw, 260px); margin-top: clamp(40px, 6vw, 80px); pointer-events: none; }
+.footer-scene img { position: absolute; bottom: 0; height: 100%; width: auto; filter: brightness(0); opacity: .55; }
+.footer-scene .fsun { position: absolute; left: 50%; bottom: 10%; width: clamp(90px, 12vw, 170px); aspect-ratio: 1; border-radius: 50%; translate: -50% 0; background: radial-gradient(closest-side, var(--honey), rgba(226,160,74,.0)); opacity: .8; }
 
 /* ---------- Marquee ---------- */
 .marquee { background: var(--ink); color: var(--paper); overflow: hidden; padding-block: 18px; }
@@ -219,7 +253,12 @@ li.open .ing-detail { grid-template-rows: 1fr; }
   .beat { max-width: none; left: var(--gutter); right: var(--gutter-r); text-align: left; }
   .beat-1 { bottom: 5svh; }
   .beat-2, .beat-3 { top: auto; bottom: 6svh; text-align: left; }
-  .beat-2 p { margin-left: 0; }
+  .palm-r { right: -22vw; height: 62svh; bottom: 30svh; }
+  .palm-b { display: none; }
+  .aloe { width: 34vw; bottom: 34svh; left: -6vw; }
+  .grass { bottom: 33svh; height: 70px; }
+  .horizon { bottom: 33svh; height: 30%; }
+  .hint { display: none; }
   .beat h1, .beat h2 { font-size: var(--step-2); }
   .beat p { font-size: .95rem; }
   .progress { display: none; }
@@ -230,6 +269,7 @@ li.open .ing-detail { grid-template-rows: 1fr; }
   .stage { height: auto; }
   .stage-pin { position: relative; height: auto; min-height: 100svh; }
   .beat-2, .beat-3 { display: none; }
+  .leafshade { animation: none; }
   * { transition: none !important; }
 }
 </style>
@@ -253,7 +293,17 @@ li.open .ing-detail { grid-template-rows: 1fr; }
   <!-- HERO: Blender frame sequence scrubbed by scroll -->
   <section class="stage" id="stage" aria-label="L'huile nourrissante yeema">
     <div class="stage-pin">
+      <div class="sky" aria-hidden="true"></div>
+      <div class="sun" aria-hidden="true"></div>
       <div class="wordmark" aria-hidden="true">yeema</div>
+      <div class="horizon" aria-hidden="true">
+        <img class="bb1" src="assets/plants/baobab.webp" alt="" width="1400" height="1050">
+        <img class="bb2" src="assets/plants/baobab.webp" alt="" width="1400" height="1050">
+        <img class="bb3" src="assets/plants/baobab.webp" alt="" width="1400" height="1050">
+      </div>
+      <canvas class="palm palm-b" id="palmB" width="860" height="1120" aria-hidden="true"></canvas>
+      <canvas class="palm palm-r" id="palmA" width="860" height="1120" role="img" aria-label="Cocotier qui bouge au vent : touchez-le pour le secouer"></canvas>
+      <div class="hint" aria-hidden="true">Touchez les palmiers</div>
       <canvas id="bottle" width="960" height="1200" role="img" aria-label="Flacon ambré d'huile nourrissante yeema, la pipette se dévisse et une goutte d'huile tombe"></canvas>
       <div class="beats">
         <div class="beat beat-1">
@@ -280,6 +330,9 @@ li.open .ing-detail { grid-template-rows: 1fr; }
           </div>
         </div>
       </div>
+      <img class="aloe" src="assets/plants/aloe.webp" alt="" width="1000" height="800" aria-hidden="true">
+      <div class="grass" aria-hidden="true"></div>
+      <div class="leafbits" id="leafbits" aria-hidden="true"></div>
       <div class="progress" aria-hidden="true"><span>Défiler</span><span class="bar"><i id="bar"></i></span></div>
       <div class="loader" id="loader">Chargement <span id="loadPct">&nbsp;0 %</span></div>
     </div>
@@ -294,6 +347,7 @@ li.open .ing-detail { grid-template-rows: 1fr; }
 
   <!-- PRODUCTS -->
   <section class="shop" id="boutique">
+    <div class="leafshade" aria-hidden="true"></div>
     <div class="wrap">
       <div class="section-head">
         <h2 class="reveal">La routine <em>yeema</em></h2>
@@ -348,6 +402,7 @@ li.open .ing-detail { grid-template-rows: 1fr; }
 
   <!-- RITUAL -->
   <section class="ritual" id="rituel">
+    <div class="leafshade b" aria-hidden="true"></div>
     <div class="wrap">
       <div class="ritual-hero">
         <h2 class="reveal">Le rituel <em>du soir</em></h2>
@@ -391,7 +446,13 @@ li.open .ing-detail { grid-template-rows: 1fr; }
       <div><h4>yeema</h4><ul><li><a href="#ingredients">Ingrédients</a></li><li><a href="#rituel">Rituel</a></li><li><a href="#diagnostic">Diagnostic</a></li></ul></div>
       <div><h4>Aide</h4><ul><li><a href="#top">Livraison &amp; retours</a></li><li><a href="#top">FAQ</a></li><li><a href="#top">Contact</a></li></ul></div>
     </div>
-    <div class="giant" aria-hidden="true">yeema</div>
+    <div class="footer-scene" aria-hidden="true">
+      <div class="fsun"></div>
+      <img src="assets/plants/palm_a/f_0001.webp" alt="" style="left:2%" width="860" height="1120">
+      <img src="assets/plants/baobab.webp" alt="" style="left:34%;height:62%" width="1400" height="1050">
+      <img src="assets/plants/palm_b/f_0001.webp" alt="" style="right:4%;height:120%" width="860" height="1120">
+    </div>
+    <div class="giant" aria-hidden="true" style="margin-top:0">yeema</div>
     <div class="legal"><span>© 2026 yeema</span><span>* Test instrumental sur 20 volontaires, cheveux de type 3C à 4C.</span></div>
   </div>
 </footer>
@@ -473,7 +534,12 @@ li.open .ing-detail { grid-template-rows: 1fr; }
       .fromTo('.beat-2', { autoAlpha: 0, y: 40 }, { autoAlpha: 1, y: 0, duration: .1 }, .28)
       .to('.beat-2', { autoAlpha: 0, y: -40, duration: .1 }, .55)
       .fromTo('.beat-3', { autoAlpha: 0, y: 40 }, { autoAlpha: 1, y: 0, duration: .1 }, .68)
-      .to('.progress', { autoAlpha: 0, duration: .05 }, .92);
+      .to('.progress', { autoAlpha: 0, duration: .05 }, .92)
+      .to('.sun', { yPercent: 55, scale: .92, ease: 'none', duration: 1 }, 0)
+      .to('.palm-r', { xPercent: 18, scale: 1.08, ease: 'none', duration: 1 }, 0)
+      .to('.palm-b', { xPercent: 10, ease: 'none', duration: 1 }, 0)
+      .to('.horizon', { yPercent: 8, ease: 'none', duration: 1 }, 0)
+      .to('.hint', { autoAlpha: 0, duration: .05 }, .1);
     gsap.from('.beat-1 > *', { y: 30, opacity: 0, duration: 1.1, stagger: .08, ease: 'power3.out', delay: .2 });
 
     // section reveals: start visible-ish, move into place
@@ -489,6 +555,87 @@ li.open .ing-detail { grid-template-rows: 1fr; }
     // reduced motion: show the bottle open with the drop
     state.frame = FRAMES - 1; imgs[FRAMES - 1].onload = () => { current = -1; draw(FRAMES - 1); loader.classList.add('done'); };
   }
+
+  /* ---------- Interactive palms (Blender sway loops) ---------- */
+  const PF = 48;
+  const makePalm = (id, dir) => {
+    const cv = document.getElementById(id); const c2 = cv.getContext('2d'); const fr = [];
+    for (let i = 0; i < PF; i++) { const im = new Image(); im.decoding = 'async'; im.src = `assets/plants/${dir}/f_${String(i + 1).padStart(4, '0')}.webp`; fr.push(im); }
+    return { cv, c2, fr, phase: Math.random() * PF, energy: 0, bend: 0, bendV: 0, last: -1 };
+  };
+  const palms = [makePalm('palmA', 'palm_a'), makePalm('palmB', 'palm_b')];
+  const drawPalm = p => {
+    let i = Math.floor(p.phase) % PF; let im = p.fr[i];
+    if (!(im.complete && im.naturalWidth)) { im = p.fr.find(f => f.complete && f.naturalWidth); if (!im) return; }
+    if (im === p.last) return; p.last = im;
+    p.c2.clearRect(0, 0, 860, 1120); p.c2.drawImage(im, 0, 0, 860, 1120);
+  };
+  const ptr = { x: 0, y: 0, vx: 0, nx: 0, ny: 0 };
+  let lastMove = performance.now();
+  addEventListener('pointermove', e => {
+    const now = performance.now(), dt = Math.max(16, now - lastMove); lastMove = now;
+    ptr.vx = (e.clientX - ptr.x) / dt; ptr.x = e.clientX; ptr.y = e.clientY;
+    ptr.nx = e.clientX / innerWidth - .5; ptr.ny = e.clientY / innerHeight - .5;
+    const speed = Math.min(1, Math.hypot(e.movementX || 0, e.movementY || 0) / 60);
+    palms.forEach(p => { p.energy = Math.min(1.4, p.energy + speed * .08); p.bendV += ptr.vx * .25; });
+  }, { passive: true });
+  // leaves that fall when a palm is shaken
+  const bits = document.getElementById('leafbits');
+  const dropLeaves = (x, y, n = 7) => {
+    if (reduce || !hasGsap) return;
+    for (let k = 0; k < n; k++) {
+      const el = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); el.setAttribute('viewBox', '0 0 34 12');
+      const hue = [ '#5f7a2a', '#7d8f33', '#a48a3a', '#4c6a22' ][k % 4];
+      el.innerHTML = `<path d="M1 6 C 10 -1, 24 -1, 33 6 C 24 13, 10 13, 1 6 Z" fill="${hue}"/><path d="M2 6 H31" stroke="rgba(0,0,0,.25)" stroke-width=".8"/>`;
+      el.style.left = x + 'px'; el.style.top = y + 'px'; bits.appendChild(el);
+      const dx = (Math.random() - .5) * 260, dur = 2.2 + Math.random() * 1.6;
+      gsap.to(el, { y: innerHeight - y + 40, x: dx, rotation: (Math.random() - .5) * 720, duration: dur, ease: 'power1.in', onComplete: () => el.remove() });
+      gsap.to(el, { scaleX: .3, repeat: Math.ceil(dur * 2), yoyo: true, duration: .25 + Math.random() * .2, ease: 'sine.inOut' });
+    }
+  };
+  palms.forEach(p => {
+    p.cv.addEventListener('pointerenter', () => { p.energy = Math.min(1.4, p.energy + .35); });
+    p.cv.addEventListener('pointerdown', e => {
+      p.energy = 1.4; p.bendV += (e.clientX < innerWidth / 2 ? 1 : -1) * 2.4;
+      const r = p.cv.getBoundingClientRect(); dropLeaves(e.clientX, Math.min(e.clientY, r.top + r.height * .35));
+    });
+  });
+  const grass = document.querySelector('.grass'), aloeEl = document.querySelector('.aloe');
+  const pinEl = document.querySelector('.stage-pin'); let heroVisible = true;
+  if ('IntersectionObserver' in window) new IntersectionObserver(es => { heroVisible = es[0].isIntersecting; }).observe(pinEl);
+  let tPrev = performance.now();
+  const tick = now => {
+    const dt = Math.min(.05, (now - tPrev) / 1000); tPrev = now;
+    if (heroVisible) {
+      const t = now / 1000;
+      palms.forEach((p, i) => {
+        p.energy *= Math.pow(.35, dt);                       // calm down after a gust
+        const fps = reduce ? 0 : 7 + 34 * p.energy;           // idle breeze → strong wind
+        p.phase = (p.phase + fps * dt) % PF; drawPalm(p);
+        p.bendV += (-p.bend * 9 - p.bendV * 2.6) * dt;         // spring back
+        p.bendV = Math.max(-8, Math.min(8, p.bendV)); p.bend += p.bendV * dt;
+        const sway = reduce ? 0 : Math.sin(t * (1.1 + i * .3)) * .6 * (0.4 + p.energy);
+        const depth = i === 0 ? 26 : 12;
+        p.cv.style.rotate = `${(p.bend * 2.2 + sway).toFixed(2)}deg`;
+        p.cv.style.translate = `${(-ptr.nx * depth).toFixed(1)}px ${(-ptr.ny * depth * .4).toFixed(1)}px`;
+      });
+      if (!reduce) {
+        const g = palms[0].bend * 3 + Math.sin(t * 1.6) * 1.2 * (0.5 + palms[0].energy);
+        grass.style.transform = `skewX(${(-g).toFixed(2)}deg)`;
+        aloeEl.style.transform = `translate(${(-ptr.nx * 34).toFixed(1)}px, 0) rotate(${(-g * .25).toFixed(2)}deg)`;
+        document.querySelector('.horizon').style.translate = `${(-ptr.nx * 8).toFixed(1)}px 0`;
+        document.querySelector('.sun').style.translate = `calc(-50% + ${(ptr.nx * -14).toFixed(1)}px) ${(ptr.ny * -8).toFixed(1)}px`;
+      }
+    }
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+  // the leaf shadows drift a little with the pointer
+  document.querySelectorAll('.leafshade').forEach(sh => {
+    const sec = sh.parentElement;
+    if (!reduce) sec.addEventListener('pointermove', e => { const r = sec.getBoundingClientRect();
+      sh.style.translate = `${((e.clientX - r.left) / r.width - .5) * -30}px ${((e.clientY - r.top) / r.height - .5) * -20}px`; });
+  });
 
   /* ---------- Card tilt ---------- */
   if (!reduce) document.querySelectorAll('.card-media').forEach(m => {
