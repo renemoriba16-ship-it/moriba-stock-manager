@@ -35,6 +35,9 @@ s'écartent autour du pointeur ; le vent s'intensifie quand on bouge.
 - `assets/3d/*.glb` — modèles exportés de Blender : palmier, bananier, monstera, fougère, colocasia,
   arbre géant à contreforts, liane, rocher moussu et flacon d'huile.
 - Générés par `blender/jungle.py <dossier_scripts> <dossier_sortie>`.
+- Plantes scannées `assets/3d/ph_*.json` : anthuriums, calatheas, fougères, pachiras, rochers moussus, souche et
+  tronc mort de [Poly Haven](https://polyhaven.com) (licence CC0, gratuite, usage commercial libre), préparés
+  dans Blender par `blender/ph_process.py` (choix des variantes, réduction des polygones, textures 512 px WebP).
 - Le vent et l'écartement des feuilles sont calculés dans le vertex shader (instanciation GPU).
 - Qualité d'image : occlusion ambiante précalculée dans Blender (couleurs de sommets), textures procédurales
   de feuilles, d'écorce et de litière avec normal maps, translucidité des feuilles à contre-jour, ombres
