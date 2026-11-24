@@ -253,7 +253,7 @@ li.open .ing-detail { grid-template-rows: 1fr; }
   .beat { max-width: none; left: var(--gutter); right: var(--gutter-r); text-align: left; }
   .beat-1, .beat-4 { bottom: 5svh; }
   .beat-2, .beat-3 { top: auto; bottom: 6svh; }
-  .hint { left: var(--gutter); right: auto; max-width: calc(100% - 32px); }
+  .hint { display: none; }
   .sound { top: calc(76px + env(safe-area-inset-top, 0px) + 28px); bottom: auto; left: var(--gutter); right: auto; padding: 8px 12px; }
   .beat h1, .beat h2 { font-size: var(--step-2); }
   .beat p { font-size: .95rem; }
@@ -610,7 +610,12 @@ li.open .ing-detail { grid-template-rows: 1fr; }
 <script type="module">
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { BokehPass } from 'three/addons/postprocessing/BokehPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 // ---------- yeema jungle: Blender GLB models rendered live with three.js ----------
 const stage = document.getElementById('stage');
 const canvas = document.getElementById('jungle');
@@ -622,14 +627,24 @@ const fail = (why) => { stage.classList.add('no-webgl'); loader.classList.add('d
 
 let renderer;
 try {
-  renderer = new THREE.WebGLRenderer({ canvas, antialias: !small, powerPreference: 'high-performance' });
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
 } catch (e) { fail('WebGL indisponible'); }
 
 if (renderer) {
-  renderer.setPixelRatio(Math.min(devicePixelRatio, small ? 1.5 : 1.75));
+  // quality tiers: the scene starts high on desktops and steps down by itself if the frame rate drops
+  const TIERS = [
+    { pr: 1.25, shadows: 0,    bloom: false, dof: false },
+    { pr: 1.5,  shadows: 1024, bloom: true,  dof: false },
+    { pr: 2,    shadows: 2048, bloom: true,  dof: true },
+  ];
+  const LOCK = { low: 0, mid: 1, high: 2 }[new URLSearchParams(location.search).get('q')];   // ?q=high pins a tier
+  let tier = LOCK ?? (small ? 0 : 2);
+  renderer.setPixelRatio(Math.min(devicePixelRatio, TIERS[tier].pr));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.18;
+  renderer.toneMappingExposure = 1.38;
+  renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  const ANISO = renderer.capabilities.getMaxAnisotropy();
 
   const FOG = new THREE.Color(0x233d2d);
   const scene = new THREE.Scene();
@@ -638,10 +653,78 @@ if (renderer) {
   const camera = new THREE.PerspectiveCamera(small ? 62 : 52, 1, 0.05, 140);
 
   const pmrem = new THREE.PMREMGenerator(renderer);
-  scene.environment = pmrem.fromScene(new RoomEnvironment(renderer), 0.04).texture;
+  // forest light environment painted on a canvas: bright canopy gaps above, green bounce below
+  const envTex = (() => { const c = document.createElement('canvas'); c.width = 512; c.height = 256; const g = c.getContext('2d');
+    const v = g.createLinearGradient(0, 0, 0, 256); v.addColorStop(0, '#f4f7dc'); v.addColorStop(.3, '#a9c58e'); v.addColorStop(.5, '#5d7a4c'); v.addColorStop(1, '#141c10');
+    g.fillStyle = v; g.fillRect(0, 0, 512, 256);
+    for (let i = 0; i < 40; i++) { const x = Math.random() * 512, y = Math.random() * 70, r = 4 + Math.random() * 14; const rg = g.createRadialGradient(x, y, 0, x, y, r);
+      rg.addColorStop(0, 'rgba(255,250,225,.9)'); rg.addColorStop(1, 'rgba(255,250,225,0)'); g.fillStyle = rg; g.fillRect(x - r, y - r, 2 * r, 2 * r); }
+    const t = new THREE.CanvasTexture(c); t.mapping = THREE.EquirectangularReflectionMapping; t.colorSpace = THREE.SRGBColorSpace; return t; })();
+  scene.environment = pmrem.fromEquirectangular(envTex).texture;
 
-  scene.add(new THREE.HemisphereLight(0xd9f2c4, 0x152011, 1.35));
-  const sun = new THREE.DirectionalLight(0xffe6b8, 2.6); sun.position.set(8, 30, -10); scene.add(sun);
+  scene.add(new THREE.HemisphereLight(0xd9f2c4, 0x1e2a16, 1.3));
+  const SUN_DIR = new THREE.Vector3(8, 30, -10).normalize();
+  const sun = new THREE.DirectionalLight(0xffe2b0, 3.1); sun.position.copy(SUN_DIR).multiplyScalar(40); scene.add(sun, sun.target);
+  sun.shadow.camera.left = -20; sun.shadow.camera.right = 20; sun.shadow.camera.top = 20; sun.shadow.camera.bottom = -20;
+  sun.shadow.camera.near = 1; sun.shadow.camera.far = 90; sun.shadow.bias = -0.0005; sun.shadow.normalBias = 0.04;
+  const setShadows = size => { sun.castShadow = size > 0; if (size) { sun.shadow.mapSize.set(size, size); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; } } };
+  setShadows(TIERS[tier].shadows);
+
+  // ---- procedural textures: leaf veins, bark fibres, leaf litter (with matching normal maps) ----
+  const cv = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
+  const normalFrom = (hc, strength) => {
+    const w = hc.width, h = hc.height, src = hc.getContext('2d').getImageData(0, 0, w, h).data, out = cv(w, h), og = out.getContext('2d'), img = og.createImageData(w, h);
+    const H = (x, y) => src[((((y + h) % h) * w) + ((x + w) % w)) * 4] / 255;
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const dx = (H(x + 1, y) - H(x - 1, y)) * strength, dy = (H(x, y + 1) - H(x, y - 1)) * strength, l = Math.hypot(dx, dy, 1), i = (y * w + x) * 4;
+      img.data[i] = (-dx / l * .5 + .5) * 255; img.data[i + 1] = (-dy / l * .5 + .5) * 255; img.data[i + 2] = (1 / l * .5 + .5) * 255; img.data[i + 3] = 255;
+    }
+    og.putImageData(img, 0, 0); const t = new THREE.CanvasTexture(out); t.colorSpace = THREE.NoColorSpace; return t;
+  };
+  const leafCanvas = (albedo) => {
+    const W = 256, Hh = 512, c = cv(W, Hh), g = c.getContext('2d');
+    if (albedo) {
+      const v = g.createLinearGradient(0, 0, 0, Hh); v.addColorStop(0, '#b9b9b0'); v.addColorStop(.45, '#e6e6dc'); v.addColorStop(1, '#d6d8c4'); g.fillStyle = v; g.fillRect(0, 0, W, Hh);
+      const e = g.createLinearGradient(0, 0, W, 0); e.addColorStop(0, 'rgba(255,236,170,.55)'); e.addColorStop(.18, 'rgba(255,236,170,0)'); e.addColorStop(.82, 'rgba(255,236,170,0)'); e.addColorStop(1, 'rgba(255,236,170,.55)');
+      g.fillStyle = e; g.fillRect(0, 0, W, Hh);
+      for (let i = 0; i < 260; i++) { g.fillStyle = Math.random() < .5 ? 'rgba(0,0,0,.05)' : 'rgba(255,255,230,.06)'; g.beginPath(); g.ellipse(Math.random() * W, Math.random() * Hh, 2 + Math.random() * 8, 2 + Math.random() * 14, Math.random() * 3, 0, 7); g.fill(); }
+    } else { g.fillStyle = '#7f7f7f'; g.fillRect(0, 0, W, Hh); }
+    g.strokeStyle = albedo ? 'rgba(250,250,225,.75)' : '#ffffff'; g.lineWidth = 5; g.beginPath(); g.moveTo(W / 2, 0); g.lineTo(W / 2, Hh); g.stroke();
+    g.lineWidth = albedo ? 1.6 : 2.2; g.strokeStyle = albedo ? 'rgba(245,245,215,.5)' : 'rgba(255,255,255,.85)';
+    for (let y = 10; y < Hh; y += 20) for (const sd of [-1, 1]) {
+      g.beginPath(); g.moveTo(W / 2, y); g.quadraticCurveTo(W / 2 + sd * W * .22, y + 18, W / 2 + sd * W * .5, y + 46); g.stroke();
+    }
+    return c;
+  };
+  const leafMap = new THREE.CanvasTexture(leafCanvas(true)); leafMap.colorSpace = THREE.SRGBColorSpace;
+  const leafNormal = normalFrom(leafCanvas(false), 2.2);
+  const barkCanvas = (albedo) => {
+    const W = 256, Hh = 512, c = cv(W, Hh), g = c.getContext('2d'); g.fillStyle = albedo ? '#cfc6ba' : '#808080'; g.fillRect(0, 0, W, Hh);
+    for (let i = 0; i < 520; i++) { const x = Math.random() * W, w = 1 + Math.random() * 4, l = 30 + Math.random() * 200, y = Math.random() * Hh, k = Math.random();
+      g.fillStyle = albedo ? `rgba(${k < .5 ? '40,30,22' : '245,238,225'},${.08 + Math.random() * .16})` : `rgba(${k < .5 ? '0,0,0' : '255,255,255'},${.15 + Math.random() * .3})`;
+      g.fillRect(x, y, w, l); g.fillRect(x, y - Hh, w, l); }
+    for (let i = 0; i < 26; i++) { const y = Math.random() * Hh; g.fillStyle = albedo ? 'rgba(30,22,16,.25)' : 'rgba(0,0,0,.55)'; g.fillRect(0, y, W, 1 + Math.random() * 2); }
+    return c;
+  };
+  const barkMap = new THREE.CanvasTexture(barkCanvas(true)); barkMap.colorSpace = THREE.SRGBColorSpace;
+  const barkNormal = normalFrom(barkCanvas(false), 3);
+  [barkMap, barkNormal].forEach(t => { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = ANISO; });
+  const litterCanvas = (albedo) => {
+    const W = 512, c = cv(W, W), g = c.getContext('2d'); g.fillStyle = albedo ? '#b8b4a0' : '#606060'; g.fillRect(0, 0, W, W);
+    const cols = ['#7a5a33', '#8c6e3c', '#5f6b2f', '#a5864c', '#4e4024', '#6b7d36'];
+    for (let i = 0; i < 520; i++) { const x = Math.random() * W, y = Math.random() * W, rx = 6 + Math.random() * 18, ry = rx * (.35 + Math.random() * .25), a = Math.random() * 3.14;
+      for (const [ox, oy] of [[0, 0], [W, 0], [-W, 0], [0, W], [0, -W]]) {
+        g.save(); g.translate(x + ox, y + oy); g.rotate(a);
+        g.fillStyle = albedo ? cols[i % cols.length] : `rgb(${120 + Math.random() * 120 | 0},0,0)`.replace(/rgb\((\d+),0,0\)/, (m, v) => `rgb(${v},${v},${v})`);
+        g.beginPath(); g.ellipse(0, 0, rx, ry, 0, 0, 7); g.fill();
+        g.strokeStyle = albedo ? 'rgba(0,0,0,.25)' : 'rgba(255,255,255,.6)'; g.lineWidth = 1; g.beginPath(); g.moveTo(-rx, 0); g.lineTo(rx, 0); g.stroke(); g.restore(); }
+    }
+    for (let i = 0; i < 40; i++) { g.strokeStyle = albedo ? 'rgba(60,45,30,.8)' : '#ffffff'; g.lineWidth = 1 + Math.random() * 2; g.beginPath(); const x = Math.random() * W, y = Math.random() * W; g.moveTo(x, y); g.lineTo(x + (Math.random() - .5) * 120, y + (Math.random() - .5) * 120); g.stroke(); }
+    return c;
+  };
+  const litterMap = new THREE.CanvasTexture(litterCanvas(true)); litterMap.colorSpace = THREE.SRGBColorSpace;
+  const litterNormal = normalFrom(litterCanvas(false), 2.5);
+  [litterMap, litterNormal].forEach(t => { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(44, 44); t.anisotropy = ANISO; });
   const back = new THREE.DirectionalLight(0x9fd6a0, 0.6); back.position.set(-6, 8, 20); scene.add(back);
 
   // ---- seeded random so the jungle is the same for everyone ----
@@ -660,10 +743,13 @@ if (renderer) {
   const distToTrail = (x, z) => { let d = 1e9; for (const p of trail) d = Math.min(d, Math.hypot(p.x - x, p.z - z)); return d; };
 
   // ---- shared uniforms: wind, time and the pointer that parts the leaves ----
-  const U = { uTime: { value: 0 }, uWind: { value: 0.6 }, uPointer: { value: new THREE.Vector3(0, -99, 0) }, uPush: { value: 0 } };
-  const windify = (mat, height, leafy) => {
+  const U = { uTime: { value: 0 }, uWind: { value: 0.6 }, uPointer: { value: new THREE.Vector3(0, -99, 0) }, uPush: { value: 0 }, uSunView: { value: new THREE.Vector3(0, 1, 0) } };
+  const windify = (mat, height, leafy, trans = 0) => {
     mat.onBeforeCompile = sh => {
-      Object.assign(sh.uniforms, U, { uH: { value: height }, uLeaf: { value: leafy ? 1 : 0 } });
+      Object.assign(sh.uniforms, U, { uH: { value: height }, uLeaf: { value: leafy ? 1 : 0 }, uTrans: { value: trans } });
+      sh.fragmentShader = 'uniform vec3 uSunView; uniform float uTrans;\n' + sh.fragmentShader.replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+          float sunT = pow(max(0.0, dot(normalize(-vViewPosition), uSunView)), 4.0);
+          totalEmissiveRadiance += diffuseColor.rgb * uTrans * (0.1 + 1.7 * sunT);`);
       sh.vertexShader = 'uniform float uTime, uWind, uPush, uH, uLeaf; uniform vec3 uPointer;\n' + sh.vertexShader
         .replace('#include <begin_vertex>', `#include <begin_vertex>
           float hN = clamp(abs(position.y) / uH, 0.0, 1.0);
@@ -702,7 +788,15 @@ if (renderer) {
     { file: 'liana',     n: 72,  min: 1.1, max: 8,  s: [0.8, 1.15], tilt: 0.0, hang: true },
     { file: 'hibiscus',  n: 46,  min: 1.3, max: 8,  s: [0.9, 1.4],  tilt: 0.05 },
     { file: 'orchid',    n: 60,  min: 0.9, max: 7,  s: [1.3, 1.9],  tilt: 0.05 },
+    { file: 'groundcover', n: 900, min: 0.55, max: 12, s: [0.8, 1.7], tilt: 0.12 },
+    { file: 'log',       n: 12,  min: 2.4, max: 10, s: [0.8, 1.2],  tilt: 0.02 },
   ];
+  const CASTS = new Set(['tree', 'palm', 'banana', 'colocasia', 'monstera', 'log', 'hibiscus']);
+  // canopy overhead: giant fronds high above the trail; they frame the sky and throw dappled shadows
+  const canopy = () => { const out = []; for (let i = 0; i < Math.round(80 * Q); i++) {
+    const z = R(-60, 10), p = path.getPointAt(THREE.MathUtils.clamp((11 - z) / 58, 0, 1)), sc = R(6, 9);
+    const m = new THREE.Matrix4(); m.compose(new THREE.Vector3(p.x + R(-13, 13), R(13, 18), z), new THREE.Quaternion().setFromEuler(new THREE.Euler(R(-.15, .15), R(0, 6.28), R(-.15, .15))), new THREE.Vector3(sc, sc * .5, sc));
+    out.push(m); } return out; };
   const place = (pl) => {
     const out = []; let guard = 0; const n = Math.round(pl.n * Q);
     while (out.length < n && guard++ < n * 60) {
@@ -715,7 +809,7 @@ if (renderer) {
       if (pl.file === 'tree' && dC < 7) continue;
       const m = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = R(pl.s[0], pl.s[1]);
       q.setFromEuler(new THREE.Euler(R(-pl.tilt, pl.tilt), R(0, Math.PI * 2), R(-pl.tilt, pl.tilt)));
-      m.compose(new THREE.Vector3(x, pl.hang ? R(8.5, 12) : -0.05, z), q, new THREE.Vector3(sc, sc, sc));
+      m.compose(new THREE.Vector3(x, pl.hang ? R(8.5, 12) : -0.05, z), q, new THREE.Vector3(sc * R(.88, 1.12), sc * R(.82, 1.18), sc * R(.88, 1.12)));
       out.push(m);
     }
     // a ring of ferns and monsteras frames the clearing
@@ -746,7 +840,8 @@ if (renderer) {
   }
   function distToTrailFast(x, z) { if (z > 12 || z < -66) return 99; let d = 1e9; for (let i = 0; i < trail.length; i += 3) { const p = trail[i]; d = Math.min(d, Math.hypot(p.x - x, p.z - z)); } return d; }
   gGeo.setAttribute('color', new THREE.Float32BufferAttribute(gCol, 3)); gGeo.computeVertexNormals();
-  scene.add(new THREE.Mesh(gGeo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1 })));
+  const ground = new THREE.Mesh(gGeo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, map: litterMap, normalMap: litterNormal, normalScale: new THREE.Vector2(.9, .9), envMapIntensity: .3 }));
+  ground.receiveShadow = true; scene.add(ground);
 
   // ---- light shafts through the canopy ----
   const rayTex = (() => { const c = document.createElement('canvas'); c.width = 64; c.height = 256; const g = c.getContext('2d');
@@ -759,7 +854,7 @@ if (renderer) {
     const m = new THREE.Mesh(new THREE.PlaneGeometry(w, 16), new THREE.MeshBasicMaterial({ map: rayTex, color: 0xffe2a8, transparent: true, opacity: op, blending: THREE.AdditiveBlending, depthWrite: false, fog: false, side: THREE.DoubleSide }));
     m.geometry.translate(0, -8, 0); m.position.set(x, 15, z); m.userData = { op, tilt, ph: R(0, 6.28) }; scene.add(m); rays.push(m);
   };
-  for (let i = 0; i < 9; i++) addRay(R(-4, 4), R(-42, 6), R(1.2, 2.6), R(.08, .16), R(-.28, -.12));
+  for (let i = 0; i < 15; i++) addRay(R(-5, 5), R(-46, 8), R(1.2, 3), R(.07, .15), R(-.3, -.1));
   addRay(0, -50, 3.4, .28, -.08);
 
   // ---- fireflies / pollen ----
@@ -781,7 +876,7 @@ if (renderer) {
   // and rebuilt into a binary GLB in memory before parsing. Textures load through <img> (blob: URLs).
   try { self.createImageBitmap = undefined; } catch (e) {}
   const gltf = new GLTFLoader(manager);
-  let done = 0; const TOTAL = 13;
+  let done = 0; const TOTAL = PLANTS.length + 4;
   const pad4 = n => (n + 3) & ~3;
   const load = async f => {
     const r = await fetch(`assets/3d/${f}.json`); if (!r.ok) throw new Error(`${f}.json: HTTP ${r.status}`);
@@ -803,28 +898,33 @@ if (renderer) {
     PLANTS.forEach((pl, i) => {
       const root = models[i].scene; root.updateMatrixWorld(true);
       const box = new THREE.Box3().setFromObject(root), H = Math.max(0.5, box.max.y - Math.min(0, box.min.y), -box.min.y);
-      const mats = place(pl); if (!mats.length) return;
+      const sets = [[place(pl), CASTS.has(pl.file), 1]];
+      if (pl.file === 'fern') sets.push([canopy(), true, .55]);           // canopy re-uses the fern fronds, darker
       const col = new THREE.Color();
+      sets.forEach(([mats, casts, shade]) => { if (!mats.length) return;
       root.traverse(o => {
         if (!o.isMesh) return;
-        const mat = o.material.clone(); mat.side = THREE.DoubleSide; mat.envMapIntensity = .25;
-        const petal = /petal/.test(mat.name), leafy = petal || /leaf|moss/.test(mat.name);
-        if (leafy) { mat.roughness = .62; }
-        if (petal) { mat.emissive = mat.color.clone().multiplyScalar(.22); }   // flowers glow a little through the haze
-        windify(mat, H, leafy);
+        const mat = o.material.clone(); mat.side = THREE.DoubleSide; mat.envMapIntensity = .35;
+        const petal = /petal/.test(mat.name), leafy = petal || /leaf|moss/.test(mat.name), bark = /bark|rock/.test(mat.name);
+        if (leafy) { mat.roughness = petal ? .5 : .58; mat.map = leafMap; mat.normalMap = leafNormal; mat.normalScale = new THREE.Vector2(petal ? .3 : .7, petal ? .3 : .7); }
+        if (bark) { mat.map = barkMap.clone(); mat.normalMap = barkNormal.clone(); const ry = pl.file === 'tree' ? 12 : pl.file === 'palm' ? 6 : 2;
+          [mat.map, mat.normalMap].forEach(t => { t.repeat.set(2, ry); t.needsUpdate = true; }); mat.normalScale = new THREE.Vector2(1.2, 1.2); }
+        if (petal) { mat.emissive = mat.color.clone().multiplyScalar(.18); }   // flowers glow a little through the haze
+        windify(mat, H, leafy, leafy ? (petal ? .5 : 1) : 0);
         const im = new THREE.InstancedMesh(o.geometry, mat, mats.length);
         mats.forEach((m, k) => {
           im.setMatrixAt(k, m.clone().multiply(o.matrixWorld));
-          col.setHSL(leafy ? R(.22, .3) : .08, leafy ? R(.35, .6) : .2, R(.78, 1.05)); // variation per plant
+          col.setHSL(leafy ? R(.2, .3) : .08, leafy ? R(.3, .6) : .2, R(.74, 1.06));        // variation per plant
           const v = R(.85, 1.12);
-          im.setColorAt(k, petal ? new THREE.Color(v, v, v) : leafy ? col.multiplyScalar(1.9) : new THREE.Color(R(.85, 1.1), R(.85, 1.05), R(.85, 1)));
+          im.setColorAt(k, (petal ? new THREE.Color(v, v, v) : leafy ? col.multiplyScalar(2.05) : new THREE.Color(R(.85, 1.1), R(.85, 1.05), R(.85, 1))).multiplyScalar(shade));
         });
-        im.instanceMatrix.needsUpdate = true; im.frustumCulled = false; scene.add(im);
+        im.instanceMatrix.needsUpdate = true; im.frustumCulled = false; im.castShadow = casts; im.receiveShadow = true; scene.add(im);
+      });
       });
     });
     // mossy rock and the bottle in the clearing
     const rock = models[PLANTS.length].scene; rock.scale.setScalar(.85); rock.position.copy(CLEAR); scene.add(rock);
-    rock.traverse(o => { if (o.isMesh) o.material.envMapIntensity = .2; });
+    rock.traverse(o => { if (o.isMesh) { o.material.envMapIntensity = .2; o.castShadow = o.receiveShadow = true; if (/rock/.test(o.material.name)) { o.material.map = barkMap; o.material.normalMap = barkNormal; } } });
     const rb = new THREE.Box3().setFromObject(rock);
     const b = models[PLANTS.length + 1].scene;
     const bb = new THREE.Box3().setFromObject(b), bh = bb.max.y - bb.min.y;
@@ -833,7 +933,7 @@ if (renderer) {
     dropper = new THREE.Group(); b.add(dropper);
     const parts = []; b.traverse(o => { if (o.isMesh && /Collar|Bulb|Pipette|PipOil/.test(o.name)) parts.push(o); });
     parts.forEach(o => dropper.attach(o));
-    b.traverse(o => { if (o.isMesh && o.material) { o.material.envMapIntensity = 1.3; if (o.material.transmission > 0) { o.material.thickness = .35; o.material.roughness = .04; } } });
+    b.traverse(o => { if (o.isMesh) o.castShadow = true; if (o.isMesh && o.material) { o.material.envMapIntensity = 1.3; if (o.material.transmission > 0) { o.material.thickness = .35; o.material.roughness = .04; } } });
     const spot = new THREE.SpotLight(0xffd9a0, 90, 0, .42, .7, 2); spot.position.set(CLEAR.x + 1, 9, CLEAR.z + 1); spot.target = bottle; scene.add(spot, spot.target);
     glow = new THREE.PointLight(0xffb866, 3, 6, 2); glow.position.set(CLEAR.x + .6, 1.4, CLEAR.z + 1.2); scene.add(glow);
     // ---- butterflies: drift along the trail and flee the pointer ----
@@ -892,11 +992,30 @@ if (renderer) {
     window.yeemaSound && window.yeemaSound.squawk(d.side);
   }
 
+  // ---- cinema look: depth of field, bloom, then grading, vignette and film grain ----
+  const composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: small ? 0 : 4 }));
+  composer.addPass(new RenderPass(scene, camera));
+  const bokeh = new BokehPass(scene, camera, { focus: 6, aperture: 0.00018, maxblur: 0.004 });
+  const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), .32, .55, .85);
+  const grade = new ShaderPass({
+    uniforms: { tDiffuse: { value: null }, uTime: { value: 0 }, uGrain: { value: small ? .025 : .035 } },
+    vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+    fragmentShader: `uniform sampler2D tDiffuse; uniform float uTime, uGrain; varying vec2 vUv;
+      void main() { vec4 c = texture2D(tDiffuse, vUv); float l = dot(c.rgb, vec3(.299, .587, .114));
+        c.rgb = mix(c.rgb * vec3(.9, 1.03, 1.0), c.rgb * vec3(1.07, 1.0, .88), smoothstep(.15, .85, l));   // cool-green shadows, warm highlights
+        c.rgb = (c.rgb - .5) * 1.07 + .5;
+        float d = distance(vUv, vec2(.5)); c.rgb *= mix(.7, 1.0, smoothstep(.85, .3, d));
+        float n = fract(sin(dot(vUv * (uTime * .37 + 1.0), vec2(12.9898, 78.233))) * 43758.5453); c.rgb += (n - .5) * uGrain;
+        gl_FragColor = c; }` });
+  composer.addPass(bokeh); composer.addPass(bloom); composer.addPass(new OutputPass()); composer.addPass(grade);
+  const applyTier = () => { const T = TIERS[tier]; renderer.setPixelRatio(Math.min(devicePixelRatio, T.pr)); composer.setPixelRatio(Math.min(devicePixelRatio, T.pr));
+    setShadows(T.shadows); bloom.enabled = T.bloom; bokeh.enabled = T.dof; resize(); };
+
   const resize = () => {
     const w = stage.querySelector('.stage-pin').clientWidth, h = stage.querySelector('.stage-pin').clientHeight;
-    renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); pMat.uniforms.uScale.value = h * .5 * renderer.getPixelRatio();
+    renderer.setSize(w, h, false); composer.setSize(w, h); camera.aspect = w / h; camera.updateProjectionMatrix(); pMat.uniforms.uScale.value = h * .5 * renderer.getPixelRatio();
   };
-  addEventListener('resize', resize); resize();
+  addEventListener('resize', resize); applyTier();
 
   let visible = true;
   new IntersectionObserver(es => { visible = es[0].isIntersecting; }).observe(stage);
@@ -925,6 +1044,13 @@ if (renderer) {
     gust *= Math.pow(.3, dt);
     U.uWind.value = (reduce ? .25 : .55 + .25 * Math.sin(time * .4)) + gust;
     U.uTime.value = time;
+    // the shadow camera follows the walker so dappled light is always around you
+    const fwd = tmp.set(0, 0, -1).applyQuaternion(camera.quaternion); fwd.y = 0; fwd.normalize();
+    sun.target.position.copy(camera.position).addScaledVector(fwd, 8); sun.target.position.y = 0;
+    sun.position.copy(sun.target.position).addScaledVector(SUN_DIR, 40);
+    U.uSunView.value.copy(SUN_DIR).transformDirection(camera.matrixWorldInverse);
+    bokeh.uniforms.focus.value = camera.position.distanceTo(ahead) + .4;
+    grade.uniforms.uTime.value = time;
     rays.forEach(r => { r.rotation.set(0, Math.atan2(camera.position.x - r.position.x, camera.position.z - r.position.z), 0); r.rotateX(r.userData.tilt); r.material.opacity = r.userData.op * (.75 + .25 * Math.sin(time * .6 + r.userData.ph)); });
     // butterflies
     flies.forEach(f => {
@@ -964,8 +1090,13 @@ if (renderer) {
       dropper.position.y = THREE.MathUtils.smoothstep(t, .9, 1) * 1.2;
       glow.intensity = 2 + 2 * k;
     }
-    renderer.render(scene, camera);
+    composer.render(dt);
+    // adaptive quality: after warm-up, step down a tier if the frame rate stays low
+    perf.n++; perf.t += dt;
+    if (perf.t > 2.5) { const fps = perf.n / perf.t; perf.n = 0; perf.t = 0;
+      if (LOCK === undefined && perf.warm++ > 0 && fps < 38 && tier > 0) { tier--; applyTier(); } }
   }
+  const perf = { n: 0, t: 0, warm: 0 };
   function start() { resize(); frame(); }
 
   // ---- jungle soundscape: leaves, insects, birdsong and macaw calls, all synthesised ----

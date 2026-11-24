@@ -13,7 +13,7 @@ def M(name, col, rough=0.6, metallic=0.0):
     return m
 
 class Geo:
-    def __init__(self): self.v, self.f, self.mi = [], [], []
+    def __init__(self): self.v, self.f, self.mi, self.uv = [], [], [], []
     def face(self, idx, m): self.f.append(idx); self.mi.append(m)
     def tube(self, pts, radii, sides=8, flat=1.0, m=0, cap=True):
         n = None; start = len(self.v)
@@ -24,13 +24,13 @@ class Geo:
             else: n = (n - t*n.dot(t)).normalized()
             b = t.cross(n).normalized()
             for k in range(sides):
-                a = 2*math.pi*k/sides; self.v.append(p + r*(math.cos(a)*n + flat*math.sin(a)*b))
+                a = 2*math.pi*k/sides; self.v.append(p + r*(math.cos(a)*n + flat*math.sin(a)*b)); self.uv.append((k/sides, i/max(1, len(pts)-1)))
         for i in range(len(pts)-1):
             for k in range(sides):
                 a = start + i*sides + k; b2 = start + i*sides + (k+1) % sides
                 self.face((a, b2, b2+sides, a+sides), m)
         if cap:
-            self.v.append(pts[-1]); c = len(self.v)-1; last = start + (len(pts)-1)*sides
+            self.v.append(pts[-1]); self.uv.append((.5, 1.)); c = len(self.v)-1; last = start + (len(pts)-1)*sides
             for k in range(sides): self.face((last+k, last+(k+1) % sides, c), m)
     def blade(self, base, direction, length, width, droop, fold=0.12, segs=14, cols=6, profile=None, m=0, drop=None, twist=0.0):
         """A leaf blade along a drooping midrib. drop(i,j)->True removes a face (tears, slits, holes)."""
@@ -45,7 +45,7 @@ class Geo:
             sd = side*math.cos(twist*s) + Vector((0,0,1))*math.sin(twist*s)
             for j in range(cols+1):
                 u = j/cols*2 - 1
-                self.v.append(c + sd*(u*w) + Vector((0,0,fold*w*abs(u))))
+                self.v.append(c + sd*(u*w) + Vector((0,0,fold*w*abs(u)))); self.uv.append((j/cols, s))
         for i in range(segs):
             for j in range(cols):
                 if drop and drop(i, j): continue
@@ -61,22 +61,45 @@ class Geo:
                 if rng.random() < 0.05: continue
                 dd = (side*sg*0.8 + sd*0.4 + Vector((0,0,-0.45 - 0.25*s))).normalized()
                 ww = w*L/2.6; tip = p + dd*l; mid = p + dd*l*.5 + Vector((0,0,.02))
-                b0 = len(self.v); self.v += [p, p+sd*ww, mid+sd*ww*.6, mid, tip]
+                b0 = len(self.v); self.v += [p, p+sd*ww, mid+sd*ww*.6, mid, tip]; self.uv += [(.5, 0), (.62, .04), (.62, .5), (.5, .5), (.5, 1)]
                 self.face((b0, b0+1, b0+2, b0+3), m_leaf); self.face((b0+3, b0+2, b0+4), m_leaf)
         self.tube([sp(i/12) for i in range(13)], [0.03*(1-i/14)+.006 for i in range(13)], sides=5, m=m_stem)
-    def build(self, name, mats):
+    def build(self, name, mats, ao=True, tint=None):
         me = bpy.data.meshes.new(name); me.from_pydata([tuple(v) for v in self.v], [], self.f); me.update()
         for m in mats: me.materials.append(m)
         for poly, mi in zip(me.polygons, self.mi): poly.material_index = mi
         me.shade_smooth()
+        uv = self.uv + [(.5, .5)] * (len(self.v) - len(self.uv))
+        layer = me.uv_layers.new(name="UVMap")
+        for loop in me.loops: layer.data[loop.index].uv = uv[loop.vertex_index]
         ob = bpy.data.objects.new(name, me); bpy.context.collection.objects.link(ob)
+        if ao: bake_ao(ob, tint)
         return ob
+
+def bake_ao(ob, tint=None):
+    """Bake ambient occlusion into a colour attribute: inner leaves and crevices get darker, like in a real render."""
+    sc = bpy.context.scene; sc.render.engine = 'CYCLES'; sc.cycles.samples = 24; sc.cycles.device = 'CPU'
+    if not sc.world: sc.world = bpy.data.worlds.new("AOW")
+    sc.world.light_settings.distance = 0.6
+    me = ob.data; ca = me.color_attributes.new("Col", 'BYTE_COLOR', 'POINT'); me.color_attributes.active_color = ca
+    me.attributes.render_color_index = me.color_attributes.active_color_index
+    for o in bpy.context.view_layer.objects: o.select_set(False)
+    ob.select_set(True); bpy.context.view_layer.objects.active = ob
+    bpy.ops.object.bake(type='AO', target='VERTEX_COLORS')
+    for i in range(len(ca.data)):  # soften: keep crevices darker without crushing thin leaves to black
+        c = ca.data[i].color; k = 0.42 + 0.58 * c[0]; ca.data[i].color = (k, k, k, 1)
+    if tint:
+        for i, v in enumerate(me.vertices):
+            t = tint(v.co); c = ca.data[i].color
+            ca.data[i].color = (c[0]*t[0], c[1]*t[1], c[2]*t[2], 1)
 
 def export(name, objs=None):
     bpy.ops.object.select_all(action='DESELECT')
     for o in (objs or bpy.context.scene.objects): o.select_set(True)
-    bpy.ops.export_scene.gltf(filepath=f"{OUT}/{name}.glb", export_format='GLB', use_selection=True, export_apply=True,
-                              export_normals=True, export_texcoords=True, export_materials='EXPORT', export_cameras=False, export_lights=False)
+    kw = dict(filepath=f"{OUT}/{name}.glb", export_format='GLB', use_selection=True, export_apply=True,
+              export_normals=True, export_texcoords=True, export_materials='EXPORT', export_cameras=False, export_lights=False)
+    try: bpy.ops.export_scene.gltf(**kw, export_vertex_color='ACTIVE')
+    except TypeError: bpy.ops.export_scene.gltf(**kw, export_colors=True)
     print("exported", name)
 
 def fresh():
@@ -98,6 +121,31 @@ for i in range(16):
     az = i*2*math.pi/16 + rng.uniform(-.2, .2); old = rng.random()
     g.frond(C, az, math.radians(rng.uniform(15, 55) - 30*old), rng.uniform(2.8, 3.5), rng.uniform(.55, .9) + .4*old, rng, 1 + int(old > .6), 3)
 export_ob = g.build("palm", [BARK(), LEAF(), LEAF2(), STEM()]); export("palm", [export_ob])
+
+# ---------------- ground cover: low clumps of broad leaves and grass ----------------
+fresh(); rng = random.Random(31); g = Geo()
+for k in range(9):
+    az = k*2*math.pi/9 + rng.uniform(-.3, .3)
+    g.blade(Vector((0,0,.01)), Vector((math.cos(az), math.sin(az), rng.uniform(.4, 1.1))), rng.uniform(.16, .26), rng.uniform(.05, .08), droop=.6, fold=.15, segs=5, cols=2, m=0)
+for k in range(26):
+    az = rng.uniform(0, 6.28); r = rng.uniform(0, .08)
+    base = Vector((math.cos(az)*r, math.sin(az)*r, 0))
+    g.blade(base, Vector((math.cos(az)*.25, math.sin(az)*.25, 1)), rng.uniform(.18, .34), .012, droop=.25, fold=0, segs=4, cols=1, m=1, profile=lambda s: 1 - s)
+export("groundcover", [g.build("groundcover", [LEAF(), M("leaf_grass", (0.16, 0.26, 0.06), .6)])])
+
+# ---------------- fallen mossy log with a few ferns ----------------
+fresh(); rng = random.Random(37); g = Geo()
+L = 4.2; pts = [Vector((i/12*L - L/2, .08*math.sin(i*.9), .3 + .05*math.sin(i*1.3))) for i in range(13)]
+g.tube(pts, [.33 - .06*abs(i-6)/6 for i in range(13)], sides=14, m=0)
+for k in range(3):
+    base = pts[3 + k*3] + Vector((0, 0, .28))
+    for j in range(8):
+        az = j*2*math.pi/8 + rng.uniform(-.2, .2)
+        g.frond(base, az, math.radians(rng.uniform(25, 55)), rng.uniform(.4, .6), 1.0, rng, 1, 2, steps=12, leaf_len=.5, w=.08)
+def log_tint(co):
+    m = max(0.0, min(1.0, (co.z - .35) * 3.0))
+    return (0.9 - 0.5*m, 0.8 + 0.3*m, 0.7 - 0.35*m)
+export("log", [g.build("log", [M("bark", (0.42, 0.34, 0.27), 0.9), LEAF2(), STEM()], tint=log_tint)])
 
 # ---------------- banana ----------------
 fresh(); rng = random.Random(7); g = Geo()
@@ -159,7 +207,10 @@ for k in range(5):  # moss patches / epiphyte ferns along the trunk
     for j in range(7):
         az = a + rng.uniform(-1.1, 1.1)
         g.frond(base, az, math.radians(rng.uniform(10, 50)), rng.uniform(.6, .9), 1.0, rng, 1, 1, steps=14, leaf_len=.45, w=.07)
-export("tree", [g.build("tree", [BARK(), MOSS()])])
+def moss_tint(co):
+    m = max(0.0, min(1.0, 1.0 - co.z / 5.0)) * (0.6 + 0.4 * math.sin(co.x * 3.1 + co.y * 2.3))
+    return (0.95 - 0.45 * m, 0.85 + 0.25 * m, 0.75 - 0.35 * m)
+export("tree", [g.build("tree", [M("bark", (0.42, 0.34, 0.27), 0.9), MOSS()], tint=moss_tint)])
 
 # ---------------- hanging liana ----------------
 fresh(); rng = random.Random(19); g = Geo()
@@ -185,7 +236,7 @@ for v in me.vertices:
     if v.co.z > .25: v.co.z = .25 + (v.co.z - .25)*.15  # flat top for the bottle
 me.materials.append(M("rock", (0.18, 0.17, 0.14), .9)); me.materials.append(MOSS())
 for p in me.polygons: p.material_index = 1 if p.normal.z > .55 else 0
-bpy.ops.object.shade_smooth(); export("rock", [rock])
+bpy.ops.object.shade_smooth(); bake_ao(rock); export("rock", [rock])
 
 # ---------------- yeema oil bottle (same model as the renders) ----------------
 fresh()
