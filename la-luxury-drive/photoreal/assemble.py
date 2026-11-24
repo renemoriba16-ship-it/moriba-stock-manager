@@ -64,6 +64,7 @@ for sh in shots:
         vf.insert(0, f"scale={W*2}:{H*2},zoompan=z='1+0.05*on/{nf}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s={W}x{H}:fps={FPS}")
     else:
         src = ["-framerate", str(FPS), "-i", os.path.join(d, "f_%04d.png")]
+        vf.insert(0, f"scale={W}:{H}:flags=lanczos")
     vf += [f"drawbox=x=0:y=0:w=iw:h={BAR}:color=black:t=fill", f"drawbox=x=0:y=ih-{BAR}:w=iw:h={BAR}:color=black:t=fill"]
     vf += text_filters(name)
     if name in ACT_FIRST: vf.append("fade=t=in:st=0:d=0.8")

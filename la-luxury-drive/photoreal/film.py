@@ -320,12 +320,12 @@ r = scene.render
 r.engine = "CYCLES"
 cy = scene.cycles
 cy.device = "CPU"
-cy.samples = int(arg("--samples", 6 if TEST else 10))
+cy.samples = int(arg("--samples", 6))
 cy.use_adaptive_sampling = True; cy.adaptive_threshold = 0.02
 cy.use_denoising = True
 cy.max_bounces = 4; cy.diffuse_bounces = 2; cy.glossy_bounces = 3; cy.transmission_bounces = 4
 cy.caustics_reflective = cy.caustics_refractive = False
-r.resolution_x, r.resolution_y = (640, 360) if TEST else (1280, 720)
+r.resolution_x, r.resolution_y = (640, 360) if TEST else (960, 540)
 r.use_motion_blur = True; r.motion_blur_shutter = 0.5
 r.use_persistent_data = True
 scene.view_settings.view_transform = "AgX"
