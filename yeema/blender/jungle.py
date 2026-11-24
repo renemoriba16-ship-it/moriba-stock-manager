@@ -73,8 +73,15 @@ class Geo:
         layer = me.uv_layers.new(name="UVMap")
         for loop in me.loops: layer.data[loop.index].uv = uv[loop.vertex_index]
         ob = bpy.data.objects.new(name, me); bpy.context.collection.objects.link(ob)
-        if ao: bake_ao(ob, tint)
+        if ao: bake_ao(ob, tint or leaf_variation)
         return ob
+
+def leaf_variation(co):
+    """Natural colour drift across a plant: some leaves yellower, some bluer and darker, tips a bit sun-bleached."""
+    n = 0.5 + 0.5 * math.sin(co.x * 6.3 + co.y * 4.7 + co.z * 3.1) * math.cos(co.y * 5.9 - co.z * 4.3)
+    h = max(0.0, min(1.0, co.z / 2.5))
+    warm, cool = (1.14, 1.06, 0.72), (0.82, 0.96, 0.92)
+    return tuple((cool[i] + (warm[i] - cool[i]) * n) * (0.94 + 0.12 * h) for i in range(3))
 
 def bake_ao(ob, tint=None):
     """Bake ambient occlusion into a colour attribute: inner leaves and crevices get darker, like in a real render."""
