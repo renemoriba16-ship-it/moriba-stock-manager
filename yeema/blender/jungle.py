@@ -63,7 +63,7 @@ class Geo:
                 ww = w*L/2.6; tip = p + dd*l; mid = p + dd*l*.5 + Vector((0,0,.02))
                 b0 = len(self.v); self.v += [p, p+sd*ww, mid+sd*ww*.6, mid, tip]; self.uv += [(.5, 0), (.62, .04), (.62, .5), (.5, .5), (.5, 1)]
                 self.face((b0, b0+1, b0+2, b0+3), m_leaf); self.face((b0+3, b0+2, b0+4), m_leaf)
-        self.tube([sp(i/12) for i in range(13)], [0.03*(1-i/14)+.006 for i in range(13)], sides=5, m=m_stem)
+        self.tube([sp(i/6) for i in range(7)], [0.03*(1-i/8)+.006 for i in range(7)], sides=3, m=m_stem, cap=False)
     def build(self, name, mats, ao=True, tint=None):
         me = bpy.data.meshes.new(name); me.from_pydata([tuple(v) for v in self.v], [], self.f); me.update()
         for m in mats: me.materials.append(m)
@@ -119,7 +119,7 @@ g.tube(pts, [0.26 - 0.09*i/30 + 0.012*math.sin(i*2.3) for i in range(31)], sides
 C = pts[-1]
 for i in range(16):
     az = i*2*math.pi/16 + rng.uniform(-.2, .2); old = rng.random()
-    g.frond(C, az, math.radians(rng.uniform(15, 55) - 30*old), rng.uniform(2.8, 3.5), rng.uniform(.55, .9) + .4*old, rng, 1 + int(old > .6), 3)
+    g.frond(C, az, math.radians(rng.uniform(15, 55) - 30*old), rng.uniform(2.8, 3.5), rng.uniform(.55, .9) + .4*old, rng, 1 + int(old > .6), 3, steps=22, w=.075)
 export_ob = g.build("palm", [BARK(), LEAF(), LEAF2(), STEM()]); export("palm", [export_ob])
 
 # ---------------- ground cover: low clumps of broad leaves and grass ----------------
@@ -141,7 +141,7 @@ for k in range(3):
     base = pts[3 + k*3] + Vector((0, 0, .28))
     for j in range(8):
         az = j*2*math.pi/8 + rng.uniform(-.2, .2)
-        g.frond(base, az, math.radians(rng.uniform(25, 55)), rng.uniform(.4, .6), 1.0, rng, 1, 2, steps=12, leaf_len=.5, w=.08)
+        g.frond(base, az, math.radians(rng.uniform(25, 55)), rng.uniform(.4, .6), 1.0, rng, 1, 2, steps=8, leaf_len=.55, w=.11)
 def log_tint(co):
     m = max(0.0, min(1.0, (co.z - .35) * 3.0))
     return (0.9 - 0.5*m, 0.8 + 0.3*m, 0.7 - 0.35*m)
@@ -177,9 +177,9 @@ export("monstera", [g.build("monstera", [LEAF3(), STEM()])])
 
 # ---------------- fern ----------------
 fresh(); rng = random.Random(5); g = Geo()
-for i in range(18):
-    az = i*2*math.pi/18 + rng.uniform(-.15, .15)
-    g.frond(Vector((0,0,.05)), az, math.radians(rng.uniform(45, 75)), rng.uniform(.9, 1.3), rng.uniform(.9, 1.2), rng, 0, 1, steps=22, leaf_len=.5, w=.08)
+for i in range(14):
+    az = i*2*math.pi/14 + rng.uniform(-.15, .15)
+    g.frond(Vector((0,0,.05)), az, math.radians(rng.uniform(45, 75)), rng.uniform(.9, 1.3), rng.uniform(.9, 1.2), rng, 0, 1, steps=14, leaf_len=.55, w=.11)
 export("fern", [g.build("fern", [LEAF2(), STEM()])])
 
 # ---------------- colocasia (elephant ear) ----------------
@@ -206,7 +206,7 @@ for k in range(5):  # moss patches / epiphyte ferns along the trunk
     base = Vector((math.cos(a)*.95, math.sin(a)*.95, z))
     for j in range(7):
         az = a + rng.uniform(-1.1, 1.1)
-        g.frond(base, az, math.radians(rng.uniform(10, 50)), rng.uniform(.6, .9), 1.0, rng, 1, 1, steps=14, leaf_len=.45, w=.07)
+        g.frond(base, az, math.radians(rng.uniform(10, 50)), rng.uniform(.6, .9), 1.0, rng, 1, 1, steps=9, leaf_len=.5, w=.1)
 def moss_tint(co):
     m = max(0.0, min(1.0, 1.0 - co.z / 5.0)) * (0.6 + 0.4 * math.sin(co.x * 3.1 + co.y * 2.3))
     return (0.95 - 0.45 * m, 0.85 + 0.25 * m, 0.75 - 0.35 * m)
@@ -243,5 +243,9 @@ fresh()
 mats = lib.materials()
 root, dropper = lib.oil_bottle(S, mats)
 objs = [o for o in bpy.context.scene.objects if o.type == 'MESH']
+for o in objs:
+    for md in o.modifiers:
+        if md.type == 'SUBSURF': md.levels = md.render_levels = 1
+        if md.type == 'SCREW': md.steps = md.render_steps = 48
 export("bottle", objs)
 print("JUNGLE DONE")

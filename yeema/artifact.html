@@ -613,7 +613,6 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-import { BokehPass } from 'three/addons/postprocessing/BokehPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 // ---------- yeema jungle: Blender GLB models rendered live with three.js ----------
@@ -633,9 +632,9 @@ try {
 if (renderer) {
   // quality tiers: the scene starts high on desktops and steps down by itself if the frame rate drops
   const TIERS = [
-    { pr: 1.25, shadows: 0,    bloom: false, dof: false },
-    { pr: 1.5,  shadows: 1024, bloom: true,  dof: false },
-    { pr: 2,    shadows: 2048, bloom: true,  dof: true },
+    { pr: 1.25, shadows: 0,    bloom: false },
+    { pr: 1.5,  shadows: 1024, bloom: true  },
+    { pr: 1.75, shadows: 2048, bloom: true  },
   ];
   const LOCK = { low: 0, mid: 1, high: 2 }[new URLSearchParams(location.search).get('q')];   // ?q=high pins a tier
   let tier = LOCK ?? (small ? 0 : 2);
@@ -650,7 +649,7 @@ if (renderer) {
   const scene = new THREE.Scene();
   scene.background = FOG.clone();
   scene.fog = new THREE.FogExp2(FOG, small ? 0.05 : 0.043);
-  const camera = new THREE.PerspectiveCamera(small ? 62 : 52, 1, 0.05, 140);
+  const camera = new THREE.PerspectiveCamera(small ? 62 : 52, 1, 0.05, 60);   // the haze hides everything beyond ~45 m
 
   const pmrem = new THREE.PMREMGenerator(renderer);
   // forest light environment painted on a canvas: bright canopy gaps above, green bounce below
@@ -667,7 +666,8 @@ if (renderer) {
   const sun = new THREE.DirectionalLight(0xffe2b0, 3.1); sun.position.copy(SUN_DIR).multiplyScalar(40); scene.add(sun, sun.target);
   sun.shadow.camera.left = -20; sun.shadow.camera.right = 20; sun.shadow.camera.top = 20; sun.shadow.camera.bottom = -20;
   sun.shadow.camera.near = 1; sun.shadow.camera.far = 90; sun.shadow.bias = -0.0005; sun.shadow.normalBias = 0.04;
-  const setShadows = size => { sun.castShadow = size > 0; if (size) { sun.shadow.mapSize.set(size, size); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; } } };
+  sun.shadow.autoUpdate = false;
+  const setShadows = size => { sun.castShadow = size > 0; if (size) { sun.shadow.mapSize.set(size, size); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; } sun.shadow.needsUpdate = true; } };
   setShadows(TIERS[tier].shadows);
 
   // ---- procedural textures: leaf veins, bark fibres, leaf litter (with matching normal maps) ----
@@ -893,7 +893,7 @@ if (renderer) {
     return model;
   };
 
-  let bottle, dropper, glow; const flies = [], birds = [];
+  let bottle, dropper, glow; const flies = [], birds = [], CHUNKS = [];
   Promise.all([...PLANTS.map(p => load(p.file)), load('rock'), load('bottle'), load('butterfly'), load('macaw')]).then(models => {
     PLANTS.forEach((pl, i) => {
       const root = models[i].scene; root.updateMatrixWorld(true);
@@ -902,6 +902,8 @@ if (renderer) {
       if (pl.file === 'fern') sets.push([canopy(), true, .55]);           // canopy re-uses the fern fronds, darker
       const col = new THREE.Color();
       sets.forEach(([mats, casts, shade]) => { if (!mats.length) return;
+      const groups = new Map();
+      mats.forEach(m => { const ci = Math.floor((m.elements[14] + 70) / 15); if (!groups.has(ci)) groups.set(ci, []); groups.get(ci).push(m); });
       root.traverse(o => {
         if (!o.isMesh) return;
         const mat = o.material.clone(); mat.side = THREE.DoubleSide; mat.envMapIntensity = .35;
@@ -911,14 +913,17 @@ if (renderer) {
           [mat.map, mat.normalMap].forEach(t => { t.repeat.set(2, ry); t.needsUpdate = true; }); mat.normalScale = new THREE.Vector2(1.2, 1.2); }
         if (petal) { mat.emissive = mat.color.clone().multiplyScalar(.18); }   // flowers glow a little through the haze
         windify(mat, H, leafy, leafy ? (petal ? .5 : 1) : 0);
-        const im = new THREE.InstancedMesh(o.geometry, mat, mats.length);
-        mats.forEach((m, k) => {
+        groups.forEach((gm, ci) => {
+        const im = new THREE.InstancedMesh(o.geometry, mat, gm.length);
+        gm.forEach((m, k) => {
           im.setMatrixAt(k, m.clone().multiply(o.matrixWorld));
           col.setHSL(leafy ? R(.2, .3) : .08, leafy ? R(.3, .6) : .2, R(.74, 1.06));        // variation per plant
           const v = R(.85, 1.12);
           im.setColorAt(k, (petal ? new THREE.Color(v, v, v) : leafy ? col.multiplyScalar(2.05) : new THREE.Color(R(.85, 1.1), R(.85, 1.05), R(.85, 1))).multiplyScalar(shade));
         });
-        im.instanceMatrix.needsUpdate = true; im.frustumCulled = false; im.castShadow = casts; im.receiveShadow = true; scene.add(im);
+        im.instanceMatrix.needsUpdate = true; im.computeBoundingSphere(); im.castShadow = casts; im.receiveShadow = true;
+        im.userData.cz = ci * 15 - 62.5; CHUNKS.push(im); scene.add(im);
+        });
       });
       });
     });
@@ -963,7 +968,8 @@ if (renderer) {
       outer.userData = { home: home.clone(), pt, side, state: 'perched', t0: 0, inner, wR: parts.WingR, wL: parts.WingL, head: parts.MHead, curve: null, face: outer.quaternion.clone() };
       birds.push(outer);
     });
-    loader.classList.add('done'); start();
+    const reveal = () => { loader.classList.add('done'); start(); };
+    (renderer.compileAsync ? renderer.compileAsync(scene, camera) : Promise.resolve()).catch(() => {}).finally(reveal);
   }).catch(err => { console.error(err); fail(err && err.message); });
 
   // ---- input: scroll walks the trail, the pointer looks around and parts the leaves ----
@@ -995,7 +1001,6 @@ if (renderer) {
   // ---- cinema look: depth of field, bloom, then grading, vignette and film grain ----
   const composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: small ? 0 : 4 }));
   composer.addPass(new RenderPass(scene, camera));
-  const bokeh = new BokehPass(scene, camera, { focus: 6, aperture: 0.00018, maxblur: 0.004 });
   const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), .32, .55, .85);
   const grade = new ShaderPass({
     uniforms: { tDiffuse: { value: null }, uTime: { value: 0 }, uGrain: { value: small ? .025 : .035 } },
@@ -1007,9 +1012,10 @@ if (renderer) {
         float d = distance(vUv, vec2(.5)); c.rgb *= mix(.7, 1.0, smoothstep(.85, .3, d));
         float n = fract(sin(dot(vUv * (uTime * .37 + 1.0), vec2(12.9898, 78.233))) * 43758.5453); c.rgb += (n - .5) * uGrain;
         gl_FragColor = c; }` });
-  composer.addPass(bokeh); composer.addPass(bloom); composer.addPass(new OutputPass()); composer.addPass(grade);
-  const applyTier = () => { const T = TIERS[tier]; renderer.setPixelRatio(Math.min(devicePixelRatio, T.pr)); composer.setPixelRatio(Math.min(devicePixelRatio, T.pr));
-    setShadows(T.shadows); bloom.enabled = T.bloom; bokeh.enabled = T.dof; resize(); };
+  composer.addPass(bloom); composer.addPass(new OutputPass()); composer.addPass(grade);
+  let resScale = 1;
+  const applyRes = () => { const pr = Math.min(devicePixelRatio, TIERS[tier].pr) * resScale; renderer.setPixelRatio(pr); composer.setPixelRatio(pr); resize(); };
+  const applyTier = () => { const T = TIERS[tier]; setShadows(T.shadows); bloom.enabled = T.bloom; applyRes(); };
 
   const resize = () => {
     const w = stage.querySelector('.stage-pin').clientWidth, h = stage.querySelector('.stage-pin').clientHeight;
@@ -1046,21 +1052,26 @@ if (renderer) {
     U.uTime.value = time;
     // the shadow camera follows the walker so dappled light is always around you
     const fwd = tmp.set(0, 0, -1).applyQuaternion(camera.quaternion); fwd.y = 0; fwd.normalize();
-    sun.target.position.copy(camera.position).addScaledVector(fwd, 8); sun.target.position.y = 0;
-    sun.position.copy(sun.target.position).addScaledVector(SUN_DIR, 40);
+    const cx = Math.round((camera.position.x + fwd.x * 8) / 4) * 4, cz = Math.round((camera.position.z + fwd.z * 8) / 4) * 4;
+    if (cx !== shadowCell.x || cz !== shadowCell.z) {
+      shadowCell.x = cx; shadowCell.z = cz; sun.target.position.set(cx, 0, cz); sun.target.updateMatrixWorld();
+      sun.position.copy(sun.target.position).addScaledVector(SUN_DIR, 40); sun.shadow.needsUpdate = true;
+    }
+    for (const c of CHUNKS) c.visible = Math.abs(c.userData.cz - camera.position.z) < 50;
+    for (const f of flies) f.visible = f.position.distanceToSquared(camera.position) < 900;
+    for (const b of birds) if (b.userData.state !== 'gone') b.visible = b.position.distanceToSquared(camera.position) < 1600;
     U.uSunView.value.copy(SUN_DIR).transformDirection(camera.matrixWorldInverse);
-    bokeh.uniforms.focus.value = camera.position.distanceTo(ahead) + .4;
     grade.uniforms.uTime.value = time;
     rays.forEach(r => { r.rotation.set(0, Math.atan2(camera.position.x - r.position.x, camera.position.z - r.position.z), 0); r.rotateX(r.userData.tilt); r.material.opacity = r.userData.op * (.75 + .25 * Math.sin(time * .6 + r.userData.ph)); });
     // butterflies
     flies.forEach(f => {
       const d = f.userData, tt = time * d.sp + d.ph;
-      const toPtr = f.position.clone().sub(U.uPointer.value), dist = toPtr.length();
+      const toPtr = _v1.copy(f.position).sub(U.uPointer.value), dist = toPtr.length();
       if (dist < 1.5 && U.uPush.value > .3) d.flee.addScaledVector(toPtr.normalize(), (1.5 - dist) * dt * 6);
       d.flee.multiplyScalar(Math.pow(.25, dt)); if (d.flee.length() > 3) d.flee.setLength(3);
       d.last.copy(f.position);
       f.position.set(d.a.x + Math.sin(tt * .9) * 1.3 + d.flee.x, d.a.y + Math.sin(tt * 1.7) * .45 + Math.sin(tt * 5.3) * .06 + d.flee.y, d.a.z + Math.cos(tt * .7) * 1.4 + d.flee.z);
-      const vel = f.position.clone().sub(d.last); if (vel.lengthSq() > 1e-8) f.lookAt(f.position.clone().add(vel));
+      const vel = _v1.copy(f.position).sub(d.last); if (vel.lengthSq() > 1e-8) f.lookAt(_v2.copy(f.position).add(vel));
       const flap = reduce ? .4 : Math.sin(time * 24 + d.ph) * .95;
       if (d.wR) d.wR.rotation.z = flap; if (d.wL) d.wL.rotation.z = -flap;
     });
@@ -1092,12 +1103,17 @@ if (renderer) {
     }
     composer.render(dt);
     // adaptive quality: after warm-up, step down a tier if the frame rate stays low
+    // adaptive smoothness: first lower the resolution a little, then drop costly effects if that is not enough
     perf.n++; perf.t += dt;
-    if (perf.t > 2.5) { const fps = perf.n / perf.t; perf.n = 0; perf.t = 0;
-      if (LOCK === undefined && perf.warm++ > 0 && fps < 38 && tier > 0) { tier--; applyTier(); } }
+    if (perf.t > 1.5) { const fps = perf.n / perf.t; perf.n = 0; perf.t = 0;
+      if (LOCK === undefined && perf.warm++ > 0) {
+        if (fps < 50 && resScale > .65) { resScale = Math.max(.65, resScale - .12); applyRes(); }
+        else if (fps < 36 && tier > 0) { tier--; applyTier(); }
+        else if (fps > 58 && resScale < 1) { resScale = Math.min(1, resScale + .08); applyRes(); }
+      } }
   }
-  const perf = { n: 0, t: 0, warm: 0 };
-  function start() { resize(); frame(); }
+  const perf = { n: 0, t: 0, warm: 0 }, shadowCell = { x: NaN, z: NaN }, _v1 = new THREE.Vector3(), _v2 = new THREE.Vector3();
+  function start() { resize(); frame(); if (new URLSearchParams(location.search).has('debug')) window.__jungle = { renderer, scene, camera }; }
 
   // ---- jungle soundscape: leaves, insects, birdsong and macaw calls, all synthesised ----
   const soundBtn = document.getElementById('sound');

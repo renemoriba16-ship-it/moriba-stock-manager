@@ -24,14 +24,14 @@ for k in range(5):
     for i in range(2, 7):
         for j in range(3):
             az = rng.uniform(0, 6.28)
-            g.blade(pts[i], Vector((math.cos(az), math.sin(az), rng.uniform(-.2, .5))), rng.uniform(.16, .24), rng.uniform(.07, .1), droop=.3, segs=5, cols=2, m=LEAF_)
+            g.blade(pts[i], Vector((math.cos(az), math.sin(az), rng.uniform(-.2, .5))), rng.uniform(.16, .24), rng.uniform(.07, .1), droop=.3, segs=3, cols=2, m=LEAF_)
 for (p, a) in tips + [(t[0] + Vector((rng.uniform(-.2, .2), rng.uniform(-.2, .2), -rng.uniform(.25, .45))), t[1] + 1) for t in tips[:4]]:
     face = Vector((math.cos(a) * .7, math.sin(a) * .7, .7)).normalized()
     up = Vector((0, 0, 1)); side = face.cross(up).normalized(); up2 = side.cross(face).normalized()
     for i in range(5):
         th = i * 2 * math.pi / 5
         d = (face * .55 + side * math.cos(th) + up2 * math.sin(th)).normalized()
-        g.blade(p, d, .17, .085, droop=-.15, fold=-.25, segs=6, cols=4, profile=round_prof, m=RED)
+        g.blade(p, d, .17, .085, droop=-.15, fold=-.25, segs=4, cols=3, profile=round_prof, m=RED)
     g.tube([p, p + face * .16], [.008, .006], sides=4, m=GOLD)
 export("hibiscus", [g.build("hibiscus", [M("leaf_hib", (0.05, 0.16, 0.04), .5), STEM(), PETAL("red", (0.85, 0.03, 0.06)), PETAL("gold", (0.95, 0.65, 0.08))])])
 

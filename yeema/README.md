@@ -40,6 +40,9 @@ s'écartent autour du pointeur ; le vent s'intensifie quand on bouge.
   de feuilles, d'écorce et de litière avec normal maps, translucidité des feuilles à contre-jour, ombres
   portées avec canopée, profondeur de champ, bloom, étalonnage, vignettage et grain.
   La qualité s'adapte à l'appareil (`?q=low|mid|high` pour la forcer).
+- Fluidité : végétation découpée en tranches de 15 m (seules celles à l'écran et hors de la brume sont
+  dessinées), ombres recalculées seulement quand on avance, résolution dynamique, shaders précompilés
+  pendant le chargement, modèles allégés (~1,5 M triangles par image au lieu de 7,6 M).
 - Faune et fleurs (`blender/jungle_life.py`) : hibiscus, orchidées, papillons qui fuient le pointeur,
   aras perchés qui s'envolent quand on approche ou qu'on clique dessus.
 - Son d'ambiance synthétisé en Web Audio (vent dans les feuilles, insectes, chants d'oiseaux, cris d'aras),
