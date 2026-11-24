@@ -48,6 +48,18 @@ def text_filters(name):
         out.append(f"drawtext=fontfile={font}:text='{esc(txt)}':fontsize={size}:fontcolor=white:alpha='{a}':x=(w-text_w)/2:y={y}:shadowcolor=black@0.5:shadowx=2:shadowy=2")
     return out
 
+PREVIEW = "--preview" in sys.argv
+if PREVIEW:
+    done = []
+    for sh in shots:
+        d = os.path.join(SHOTS_DIR, sh["name"])
+        ok = os.path.exists(os.path.join(d, "hold.png")) if sh["hold"] else \
+            len([f for f in os.listdir(d) if f.startswith("f_") and os.path.getsize(os.path.join(d, f)) > 0]) >= sh["dur"] * FPS if os.path.isdir(d) else False
+        if not ok: break
+        done.append(sh)
+    shots = done
+    print("preview shots:", [s["name"] for s in shots])
+
 timeline = dict(shots=[], acts=[], total=0)
 clips = []
 t = 0.0
@@ -103,6 +115,6 @@ subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-f", "concat", "-safe", "
 
 wav = os.path.join(TMP, "audio.wav")
 subprocess.run([PY, os.path.join(HERE, "make_audio.py"), os.path.join(TMP, "timeline.json"), wav], check=True)
-final = os.path.join(HERE, "renders", "L_Heure_Doree.mp4")
+final = os.path.join(HERE, "renders", "apercu_partiel.mp4" if PREVIEW else "L_Heure_Doree.mp4")
 subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-i", video, "-i", wav, "-c:v", "copy", "-af", "loudnorm=I=-14:TP=-1.5:LRA=11", "-c:a", "aac", "-b:a", "192k", "-ar", "48000", "-shortest", final], check=True)
 print("FINAL", final, t, "s")
