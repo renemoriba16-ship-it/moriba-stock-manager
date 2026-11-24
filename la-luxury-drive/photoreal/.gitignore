@@ -1,3 +1,7 @@
 assets/
 renders/frames/
 *.blend1
+renders/shots/
+renders/test/
+renders/edit/
+renders/*.log
