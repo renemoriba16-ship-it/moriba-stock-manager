@@ -144,6 +144,14 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 .marquee-track span::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--honey); }
 @keyframes slide { to { transform: translateX(-50%); } }
 
+/* ---------- Cinematic still ---------- */
+.cine { position: relative; background: var(--jungle); }
+.cine img { width: 100%; height: auto; max-height: 92vh; object-fit: cover; }
+.cine-cap { position: absolute; left: 0; right: 0; bottom: 0; padding-block: 28px; color: var(--mist); display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: baseline;
+  background: linear-gradient(to top, rgba(4, 10, 6, .65), transparent); }
+.cine-cap .eyebrow { color: rgba(241, 238, 224, .7); }
+.cine-cap p { margin: 0; font-family: var(--f-display); font-size: var(--step-1); }
+
 /* ---------- Products ---------- */
 .shop { background: var(--paper); padding-block: clamp(80px, 12vw, 160px); }
 .section-head { display: flex; justify-content: space-between; align-items: end; gap: 32px; flex-wrap: wrap; margin-bottom: clamp(40px, 6vw, 80px); }
@@ -334,6 +342,12 @@ li.open .ing-detail { grid-template-rows: 1fr; }
       <span>Boucles 3A à 4C</span><span>Sans silicone</span><span>Vegan</span><span>Pressé à froid</span><span>Flacon en verre recyclable</span><span>Formulé en France</span>
     </div>
   </div>
+
+  <!-- CINEMATIC STILL (Blender Cycles render) -->
+  <section class="cine" aria-label="La clairière yeema">
+    <img src="assets/cinema/yeema-clairiere.jpg" alt="Flacon d'huile nourrissante yeema posé sur un rocher moussu, au cœur d'une jungle floue" width="1600" height="900" loading="lazy">
+    <div class="wrap cine-cap"><span class="eyebrow">Rendu cinéma · Blender Cycles</span><p>La clairière, là où le sentier s'arrête.</p></div>
+  </section>
 
   <!-- PRODUCTS -->
   <section class="shop" id="boutique">
