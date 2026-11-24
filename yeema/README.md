@@ -25,7 +25,15 @@ python3 blender/products.py <dossier>
 python3 blender/blob.py <dossier>
 ```
 
-## Jungle 3D (ouverture du site)
+## Ouverture « photos 3D cinéma »
+
+L'accueil s'ouvre sur 4 vues de la jungle rendues en qualité film dans Blender Cycles
+(`blender/cinema_scene.py` : plantes scannées Poly Haven + plantes yeema, sol forestier photographié,
+éclairage HDRI de forêt, brume volumétrique, profondeur de champ). Chaque vue est livrée avec sa carte de
+profondeur (`assets/cinema/shotN_depth.jpg`) : le navigateur déplace les pixels selon la profondeur pour un
+relief qui suit la souris, avec un lent travelling et des fondus au défilement.
+
+## Jungle 3D temps réel (`explore.html`)
 
 L'ouverture est une scène 3D temps réel (three.js 0.160, chargé depuis jsDelivr) :
 le défilement fait avancer la caméra sur un sentier à travers la jungle jusqu'à une clairière

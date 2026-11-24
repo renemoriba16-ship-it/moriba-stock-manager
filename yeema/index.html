@@ -117,7 +117,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 .sound[aria-pressed="true"] i b { animation: eq 1s ease-in-out infinite; }
 .sound[aria-pressed="true"] i b:nth-child(2) { animation-delay: -.3s; } .sound[aria-pressed="true"] i b:nth-child(3) { animation-delay: -.6s; } .sound[aria-pressed="true"] i b:nth-child(4) { animation-delay: -.15s; }
 @keyframes eq { 50% { height: 14px; } }
-.explore { position: absolute; z-index: 6; right: var(--gutter-r); bottom: calc(5vh + 84px); padding: 10px 16px; border-radius: 999px; font-size: .85rem; text-decoration: none;
+.explore { position: absolute; z-index: 6; right: var(--gutter-r); top: calc(118px + env(safe-area-inset-top, 0px)); padding: 10px 16px; border-radius: 999px; font-size: .85rem; text-decoration: none;
   color: var(--ink); background: var(--mist); }
 .explore:hover { background: var(--honey); }
 @media (max-width: 720px) { .explore { top: calc(76px + env(safe-area-inset-top, 0px) + 74px); bottom: auto; left: var(--gutter); right: auto; padding: 8px 12px; } }
@@ -639,7 +639,7 @@ if (renderer) {
   const U = {
     tA: { value: null }, dA: { value: null }, tB: { value: null }, dB: { value: null }, uMix: { value: 0 },
     uOff: { value: new THREE.Vector2() }, uZoomA: { value: 1 }, uZoomB: { value: 1 }, uFocA: { value: .4 }, uFocB: { value: .4 },
-    uCover: { value: new THREE.Vector2(1, 1) }, uTime: { value: 0 }, uStrength: { value: small ? .022 : .03 }, uGrain: { value: .028 },
+    uCover: { value: new THREE.Vector2(1, 1) }, uTime: { value: 0 }, uStrength: { value: small ? .022 : .03 }, uGrain: { value: .018 },
   };
   const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMaterial({
     uniforms: U, depthTest: false, depthWrite: false,
@@ -721,7 +721,7 @@ if (renderer) {
     U.uFocA.value = SHOTS[i].focus; U.uFocB.value = SHOTS[last ? i : i + 1].focus;
     const fade = last ? 0 : THREE.MathUtils.smoothstep(f, .7, 1);
     U.uMix.value = fade;
-    U.uZoomA.value = 1 + (reduce ? 0 : .17) * f;                                 // slow push-in through each shot
+    U.uZoomA.value = 1 + (reduce ? 0 : (last ? .07 : .17)) * f;                                 // slow push-in through each shot
     U.uZoomB.value = 1 + (reduce ? 0 : .05) * fade;
     // look around with the pointer; on touch screens with no pointer, a slow drift keeps the scene alive
     const idle = performance.now() - lastMove > 2500;
